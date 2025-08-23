@@ -103,7 +103,7 @@ export default function DashboardPage() {
           <p className="text-muted-foreground mt-1">Gérez les anniversaires et notifications ({total} personnes)</p>
         </div>
         <Link href="/person/create">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer">
             <Plus className="w-4 h-4 mr-2" />
             Créer une personne
           </Button>
@@ -150,9 +150,8 @@ export default function DashboardPage() {
                 </ul>
               </div>
               <Button variant="outline" onClick={() => {
-
                 fetchPeople(currentPage, search)
-              }}>
+              }} className="cursor-pointer">
                 Réessayer
               </Button>
             </div>
@@ -180,7 +179,7 @@ export default function DashboardPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Link href={`/person/${person.id}/edit`}>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="cursor-pointer">
                               <Pencil className="w-4 h-4" />
                             </Button>
                           </Link>
@@ -188,7 +187,7 @@ export default function DashboardPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(person.id)}
-                            className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                            className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -210,10 +209,10 @@ export default function DashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-
                         fetchPeople(currentPage - 1, search)
                       }}
                       disabled={currentPage === 1}
+                      className="cursor-pointer"
                     >
                       <ChevronLeft className="w-4 h-4 mr-1" />
                       Précédent
@@ -231,7 +230,7 @@ export default function DashboardPage() {
                             onClick={() => {
                               fetchPeople(pageNum, search)
                             }}
-                            className="w-8 h-8 p-0"
+                            className="w-8 h-8 p-0 cursor-pointer"
                           >
                             {pageNum}
                           </Button>
@@ -244,6 +243,7 @@ export default function DashboardPage() {
                       size="sm"
                       onClick={() => fetchPeople(currentPage + 1, search)}
                       disabled={currentPage === totalPages}
+                      className="cursor-pointer"
                     >
                       Suivant
                       <ChevronRight className="w-4 h-4 ml-1" />
