@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import "./globals.css"
-import { Header } from "@/components/layout/header"
 
 export const metadata: Metadata = {
   title: "Birthday Bot Admin",
@@ -28,7 +27,6 @@ html {
         `}</style>
       </head>
       <body>
-        <Header />
         <main className="min-h-screen bg-background">
           <div className="max-w-6xl mx-auto px-6 py-8">{children}</div>
         </main>

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { apiClient } from "@/lib/api-client"
@@ -20,7 +19,7 @@ export default function DashboardPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [connectionError, setConnectionError] = useState(false)
-  const pageSize = 10
+  const pageSize = 50
 
   const fetchPeople = async (page: number, searchTerm?: string) => {
     try {
@@ -95,38 +94,41 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Tableau de bord</h1>
-        <p className="text-muted-foreground mt-1">Gérez les anniversaires et notifications ({total} personnes)</p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      {/* Sticky Header and Search */}
+      <div className="sticky top-0 z-10 bg-background border-b border-border">
+        <div className="max-w-7xl mx-auto p-4 space-y-4">
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Tableau de bord</h1>
+            <p className="text-muted-foreground mt-1">Gérez les anniversaires et notifications ({total} personnes)</p>
+          </div>
 
-      {/* Search and create button */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Rechercher par nom..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+          {/* Search and create button */}
+          <div className="flex gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Rechercher par nom..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Link href="/person/create">
+              <Button size="default" className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap">
+                <Plus className="w-4 h-4 mr-2" />
+                Créer une personne
+              </Button>
+            </Link>
+          </div>
         </div>
-        <Link href="/person/create">
-          <Button size="default" className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap">
-            <Plus className="w-4 h-4 mr-2" />
-            Créer une personne
-          </Button>
-        </Link>
       </div>
 
-      {/* People Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Liste des personnes</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Main Content */}
+      <div className="flex-1 p-4 pb-20">
+        <div className="max-w-7xl mx-auto">
+          {/* People Table */}
           {loading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -156,7 +158,7 @@ export default function DashboardPage() {
               {search ? "Aucune personne trouvée pour cette recherche." : "Aucune personne enregistrée."}
             </div>
           ) : (
-            <>
+            <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -193,64 +195,66 @@ export default function DashboardPage() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+        </div>
+      </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <div className="text-sm text-muted-foreground">
-                    Page {currentPage} sur {totalPages} ({total} résultats)
-                  </div>
-                  <div className="flex items-center gap-2">
+      {/* Sticky Pagination */}
+      {totalPages > 1 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-10">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Page {currentPage} sur {totalPages} ({total} résultats)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  fetchPeople(currentPage - 1, search)
+                }}
+                disabled={currentPage === 1}
+                className="cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Précédent
+              </Button>
+
+              {/* Page numbers */}
+              <div className="flex gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
+                  return (
                     <Button
-                      variant="outline"
+                      key={pageNum}
+                      variant={pageNum === currentPage ? "default" : "outline"}
                       size="sm"
                       onClick={() => {
-                        fetchPeople(currentPage - 1, search)
+                        fetchPeople(pageNum, search)
                       }}
-                      disabled={currentPage === 1}
-                      className="cursor-pointer"
+                      className="w-8 h-8 p-0 cursor-pointer"
                     >
-                      <ChevronLeft className="w-4 h-4 mr-1" />
-                      Précédent
+                      {pageNum}
                     </Button>
+                  )
+                })}
+              </div>
 
-                    {/* Page numbers */}
-                    <div className="flex gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={pageNum === currentPage ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                              fetchPeople(pageNum, search)
-                            }}
-                            className="w-8 h-8 p-0 cursor-pointer"
-                          >
-                            {pageNum}
-                          </Button>
-                        )
-                      })}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fetchPeople(currentPage + 1, search)}
-                      disabled={currentPage === totalPages}
-                      className="cursor-pointer"
-                    >
-                      Suivant
-                      <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchPeople(currentPage + 1, search)}
+                disabled={currentPage === totalPages}
+                className="cursor-pointer"
+              >
+                Suivant
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
