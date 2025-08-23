@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { apiClient } from "@/lib/api-client"
+import { peopleClient } from "@/lib/api-client"
 import type { CreatePersonRequest } from "@/lib/types"
 import Link from "next/link"
 
@@ -72,14 +72,14 @@ export default function CreatePersonPage() {
         metadata.userId = formData.userId
       }
 
-      const createRequest: CreatePersonRequest = {
-        name: formData.name.trim(),
-        birthdate: formData.birthdate,
-        application: formData.application,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-      }
-
-      await apiClient.createPerson(createRequest)
+      await peopleClient.createPerson({
+        body: {
+          name: formData.name.trim(),
+          birthdate: new Date(formData.birthdate),
+          application: formData.application,
+          metadata: Object.keys(metadata).length > 0 ? metadata as Record<string, string | number | boolean> : undefined,
+        },
+      })
       router.push("/")
     } catch (error) {
       console.error("Failed to create person:", error)

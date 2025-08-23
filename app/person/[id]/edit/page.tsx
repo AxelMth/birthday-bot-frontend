@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,9 +11,21 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { apiClient } from "@/lib/api-client"
-import type { Person } from "@/lib/types"
+import { contactMethodsClient, peopleClient } from "@/lib/api-client"
 import Link from "next/link"
+
+type PersonFormData = {
+  name: string | undefined
+  birthdate: string | undefined
+  application: string | undefined
+  applicationMetadata: Record<string, string> | undefined
+}
+
+type ContactMethod = {
+  id: number
+  application: string
+  applicationMetadata: Record<string, string>
+}
 
 export default function EditPersonPage() {
   const router = useRouter()
@@ -22,13 +34,13 @@ export default function EditPersonPage() {
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [person, setPerson] = useState<Person | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    birthdate: "",
-    application: "",
-    channelId: "",
-    userId: "",
+  const [personName, setPersonName] = useState<string | null>(null)
+  const [contactMethods, setContactMethods] = useState<ContactMethod[] | null>(null)
+  const [formData, setFormData] = useState<PersonFormData>({
+    name: undefined,
+    birthdate: undefined,
+    application: undefined,
+    applicationMetadata: undefined,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -37,31 +49,19 @@ export default function EditPersonPage() {
     const fetchPerson = async () => {
       try {
         setLoading(true)
-        const personData = await apiClient.getPersonById({
+        const personData = await peopleClient.getPersonById({
           params: {
             id: personId,
           },
         })
         if (personData.status === 200) {
           const person = personData.body
-          setPerson({
-            name: personData.body.name ?? "",
-            id: personData.body.id ?? 0,
-            birthdate: person.birthdate ?? new Date(),
-            application: person.application ?? "",
-            metadata: person.metadata ?? {},
-            communications: [],
-          })
-
-          const channelId = (person.metadata as Record<string, unknown>)?.channelId as string
-          const userId = (person.metadata as Record<string, unknown>)?.userId as string
-
+          setPersonName(person.name ?? "")
           setFormData({
-            name: person.name ?? "",
-            birthdate: person.birthdate?.toISOString().split("T")[0] ?? "",
-            application: person.application ?? "",
-            channelId,
-            userId,
+            name: person.name,
+            birthdate: person.birthdate?.toISOString().split("T")[0],
+            application: person.application,
+            applicationMetadata: person.metadata as Record<string, string>,
           })
         } else {
           setErrors({ fetch: "Erreur lors du chargement des données" })
@@ -76,10 +76,32 @@ export default function EditPersonPage() {
     }
   }, [personId])
 
+  useEffect(() => {
+    const fetchContactMethods = async () => {
+      const contactMethodsResponse = await contactMethodsClient.getContactMethods()
+
+      if (contactMethodsResponse.status === 200) {
+        const contactMethods = contactMethodsResponse.body.contactMethods ?? []
+        setContactMethods(contactMethods.map((contactMethod) => ({
+          id: contactMethod.id ?? 0,
+          application: contactMethod.application ?? "",
+          applicationMetadata: contactMethod.metadata as Record<string, string>,
+        })))
+      } else {
+        setErrors({ fetch: "Erreur lors du chargement des méthodes de contact" })
+      }
+    }
+    fetchContactMethods()
+  }, [])
+
+  const applicationNames = useMemo(() => {
+    return contactMethods?.map((contactMethod) => contactMethod.application) ?? []
+  }, [contactMethods])
+  
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       newErrors.name = "Le nom est requis"
     }
 
@@ -89,15 +111,6 @@ export default function EditPersonPage() {
 
     if (!formData.application) {
       newErrors.application = "L'application est requise"
-    }
-
-    if (formData.application === "slack") {
-      if (!formData.channelId.trim()) {
-        newErrors.channelId = "L'ID du canal est requis pour Slack"
-      }
-      if (!formData.userId.trim()) {
-        newErrors.userId = "L'ID de l'utilisateur est requis pour Slack"
-      }
     }
 
     setErrors(newErrors)
@@ -114,20 +127,15 @@ export default function EditPersonPage() {
     setSubmitting(true)
 
     try {
-      const metadata: Record<string, unknown> = {}
+      const metadata: Record<string, string> = formData.applicationMetadata as Record<string, string>
 
-      if (formData.application === "slack") {
-        metadata.channelId = formData.channelId
-        metadata.userId = formData.userId
-      }
-
-      const response = await apiClient.updatePersonById({
+      const response = await peopleClient.updatePersonById({
         params: {
           id: personId,
         },
         body: {
-          name: formData.name.trim(),
-          birthdate: new Date(formData.birthdate),
+          name: formData.name?.trim(),
+          birthdate: new Date(formData.birthdate ?? ""),
           application: formData.application,
           metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         },
@@ -218,7 +226,7 @@ export default function EditPersonPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-foreground">Modifier un anniversaire</h1>
-          <p className="text-muted-foreground mt-1">Modifier les informations de {person?.name}</p>
+          <p className="text-muted-foreground mt-1">Modifier les informations de {personName}</p>
         </div>
       </div>
 
@@ -271,40 +279,31 @@ export default function EditPersonPage() {
               {errors.application && <p className="text-sm text-destructive">{errors.application}</p>}
             </div>
 
-            {/* Slack Metadata Fields */}
-            {formData.application === "slack" && (
+
+            {/* Application Selection Field */}
+            <div className="space-y-2">
+              <Label htmlFor="application">Application *</Label>
+              <Select value={formData.application} onValueChange={(value) => handleInputChange("application", value)}>
+                <SelectTrigger className={errors.application ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Sélectionnez une application" />
+                </SelectTrigger>
+                <SelectContent>
+                  {applicationNames.map((applicationName: string) => (
+                    <SelectItem key={applicationName} value={applicationName}>
+                      {applicationName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.application && <p className="text-sm text-destructive">{errors.application}</p>}
+            </div>
+
+            {/* Application Metadata Fields */}
+            {formData.application && contactMethods?.find((contactMethod) => contactMethod.application === formData.application) && (
               <>
                 <Separator />
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-foreground">Configuration Slack</h3>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="channelId">ID du canal *</Label>
-                    <Input
-                      id="channelId"
-                      type="text"
-                      placeholder="Ex: C1234567890"
-                      value={formData.channelId}
-                      onChange={(e) => handleInputChange("channelId", e.target.value)}
-                      className={errors.channelId ? "border-destructive" : ""}
-                    />
-                    {errors.channelId && <p className="text-sm text-destructive">{errors.channelId}</p>}
-                    <p className="text-xs text-muted-foreground">L&apos;ID du canal Slack où envoyer les notifications</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="userId">ID de l&apos;utilisateur *</Label>
-                    <Input
-                      id="userId"
-                      type="text"
-                      placeholder="Ex: U1234567890"
-                      value={formData.userId}
-                      onChange={(e) => handleInputChange("userId", e.target.value)}
-                      className={errors.userId ? "border-destructive" : ""}
-                    />
-                    {errors.userId && <p className="text-sm text-destructive">{errors.userId}</p>}
-                    <p className="text-xs text-muted-foreground">L&apos;ID de l&apos;utilisateur Slack à mentionner</p>
-                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Configuration {formData.application}</h3>
                 </div>
               </>
             )}

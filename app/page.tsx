@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { apiClient } from "@/lib/api-client"
+import { peopleClient } from "@/lib/api-client"
 import type { Person } from "@/lib/types"
 import Link from "next/link"
 
@@ -25,7 +25,7 @@ export default function DashboardPage() {
     try {
       setLoading(true)
       setConnectionError(false)
-      const response = await apiClient.getPaginatedPeople({ query: { pageNumber: page, pageSize: pageSize, ...(searchTerm ? { search: searchTerm } : {}) } })
+      const response = await peopleClient.getPaginatedPeople({ query: { pageNumber: page, pageSize: pageSize, ...(searchTerm ? { search: searchTerm } : {}) } })
       if (response.status === 200) {
         console.log(response.body)
         setPeople(response.body.people?.map((person) => ({
@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
     try {
       // await apiClient.deletePersonById({ id })
-      const response = await apiClient.getPaginatedPeople({ query: { pageNumber: currentPage, pageSize: 10, search } })
+      const response = await peopleClient.getPaginatedPeople({ query: { pageNumber: currentPage, pageSize: 10, search } })
       console.log(response)
     } catch (error) {
       console.error("Failed to delete person:", error)
