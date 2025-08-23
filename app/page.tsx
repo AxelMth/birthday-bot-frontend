@@ -158,14 +158,14 @@ export default function DashboardPage() {
               {search ? "Aucune personne trouvée pour cette recherche." : "Aucune personne enregistrée."}
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-hidden max-h-[calc(100vh-200px)] overflow-y-auto">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Date d&apos;anniversaire</TableHead>
-                    <TableHead>Application</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="bg-background">Nom</TableHead>
+                    <TableHead className="bg-background">Date d&apos;anniversaire</TableHead>
+                    <TableHead className="bg-background">Application</TableHead>
+                    <TableHead className="text-right bg-background">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
