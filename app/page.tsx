@@ -94,9 +94,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Sticky Header and Search */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border">
+      <div className="flex-shrink-0 bg-background border-b border-border">
         <div className="max-w-7xl mx-auto p-4 space-y-4">
           {/* Header */}
           <div>
@@ -126,39 +126,43 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 pb-20">
-        <div className="max-w-7xl mx-auto">
+      <div className="flex-1 p-4 overflow-hidden">
+        <div className="max-w-7xl mx-auto h-full flex flex-col">
           {/* People Table */}
           {loading ? (
-            <div className="flex justify-center items-center py-8">
+            <div className="flex justify-center items-center flex-1">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : connectionError ? (
-            <div className="text-center py-8 space-y-4">
-              <div className="text-destructive">
-                <h3 className="font-semibold">Erreur de connexion</h3>
-                <p className="text-sm mt-1">Impossible de se connecter au serveur API.</p>
+            <div className="flex justify-center items-center flex-1">
+              <div className="text-center space-y-4">
+                <div className="text-destructive">
+                  <h3 className="font-semibold">Erreur de connexion</h3>
+                  <p className="text-sm mt-1">Impossible de se connecter au serveur API.</p>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Vérifiez que :</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>La variable d&apos;environnement NEXT_PUBLIC_SERVER_URL est configurée</li>
+                    <li>Le serveur backend est en cours d&apos;exécution</li>
+                    <li>L&apos;URL du serveur est accessible</li>
+                  </ul>
+                </div>
+                <Button variant="outline" onClick={() => {
+                  fetchPeople(currentPage, search)
+                }} className="cursor-pointer">
+                  Réessayer
+                </Button>
               </div>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p>Vérifiez que :</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>La variable d&apos;environnement NEXT_PUBLIC_SERVER_URL est configurée</li>
-                  <li>Le serveur backend est en cours d&apos;exécution</li>
-                  <li>L&apos;URL du serveur est accessible</li>
-                </ul>
-              </div>
-              <Button variant="outline" onClick={() => {
-                fetchPeople(currentPage, search)
-              }} className="cursor-pointer">
-                Réessayer
-              </Button>
             </div>
           ) : people.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {search ? "Aucune personne trouvée pour cette recherche." : "Aucune personne enregistrée."}
+            <div className="flex justify-center items-center flex-1">
+              <div className="text-center text-muted-foreground">
+                {search ? "Aucune personne trouvée pour cette recherche." : "Aucune personne enregistrée."}
+              </div>
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden max-h-[calc(100vh-200px)] overflow-y-auto">
+            <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
               <Table>
                 <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
@@ -168,33 +172,37 @@ export default function DashboardPage() {
                     <TableHead className="text-right bg-background">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {people.map((person) => (
-                    <TableRow key={person.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{person.name}</TableCell>
-                      <TableCell>{formatDate(person.birthdate)}</TableCell>
-                      <TableCell>{getApplicationBadge(person.application)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Link href={`/person/${person.id}/edit`}>
-                            <Button variant="outline" size="sm" className="cursor-pointer">
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(person.id)}
-                            className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
               </Table>
+              <div className="flex-1 overflow-y-auto">
+                <Table>
+                  <TableBody>
+                    {people.map((person) => (
+                      <TableRow key={person.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">{person.name}</TableCell>
+                        <TableCell>{formatDate(person.birthdate)}</TableCell>
+                        <TableCell>{getApplicationBadge(person.application)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Link href={`/person/${person.id}/edit`}>
+                              <Button variant="outline" size="sm" className="cursor-pointer">
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(person.id)}
+                              className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </div>
@@ -202,7 +210,7 @@ export default function DashboardPage() {
 
       {/* Sticky Pagination */}
       {totalPages > 1 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-10">
+        <div className="flex-shrink-0 bg-background border-t border-border p-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
               Page {currentPage} sur {totalPages} ({total} résultats)
