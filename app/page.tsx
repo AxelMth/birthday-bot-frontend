@@ -96,34 +96,30 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header with search and create button */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Tableau de bord</h1>
-          <p className="text-muted-foreground mt-1">Gérez les anniversaires et notifications ({total} personnes)</p>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Tableau de bord</h1>
+        <p className="text-muted-foreground mt-1">Gérez les anniversaires et notifications ({total} personnes)</p>
+      </div>
+
+      {/* Search and create button */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Rechercher par nom..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
         </div>
         <Link href="/person/create">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer">
+          <Button size="default" className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap">
             <Plus className="w-4 h-4 mr-2" />
             Créer une personne
           </Button>
         </Link>
       </div>
-
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Rechercher par nom..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* People Table */}
       <Card>
