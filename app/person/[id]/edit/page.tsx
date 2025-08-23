@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { apiClient } from "@/lib/api-client"
-import type { Person, UpdatePersonRequest } from "@/lib/types"
+import type { Person } from "@/lib/types"
 import Link from "next/link"
 
 export default function EditPersonPage() {
@@ -37,26 +37,35 @@ export default function EditPersonPage() {
     const fetchPerson = async () => {
       try {
         setLoading(true)
-        const personData = await apiClient.getPersonById(personId)
-        setPerson(personData)
-
-        // Format birthdate for input field
-        const birthdateString = new Date(personData.birthdate).toISOString().split("T")[0]
-
-        // Extract metadata
-        const channelId = (personData.metadata?.channelId as string) || ""
-        const userId = (personData.metadata?.userId as string) || ""
-
-        setFormData({
-          name: personData.name,
-          birthdate: birthdateString,
-          application: personData.application,
-          channelId,
-          userId,
+        const personData = await apiClient.getPersonById({
+          params: {
+            id: personId,
+          },
         })
-      } catch (error) {
-        console.error("Failed to fetch person:", error)
-        setErrors({ fetch: "Erreur lors du chargement des données" })
+        if (personData.status === 200) {
+          const person = personData.body
+          setPerson({
+            name: personData.body.name ?? "",
+            id: personData.body.id ?? 0,
+            birthdate: person.birthdate ?? new Date(),
+            application: person.application ?? "",
+            metadata: person.metadata ?? {},
+            communications: [],
+          })
+
+          const channelId = (person.metadata as Record<string, unknown>)?.channelId as string
+          const userId = (person.metadata as Record<string, unknown>)?.userId as string
+
+          setFormData({
+            name: person.name ?? "",
+            birthdate: person.birthdate?.toISOString().split("T")[0] ?? "",
+            application: person.application ?? "",
+            channelId,
+            userId,
+          })
+        } else {
+          setErrors({ fetch: "Erreur lors du chargement des données" })
+        }
       } finally {
         setLoading(false)
       }
@@ -112,18 +121,23 @@ export default function EditPersonPage() {
         metadata.userId = formData.userId
       }
 
-      const updateRequest: Omit<UpdatePersonRequest, "id"> = {
-        name: formData.name.trim(),
-        birthdate: formData.birthdate,
-        application: formData.application,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-      }
+      const response = await apiClient.updatePersonById({
+        params: {
+          id: personId,
+        },
+        body: {
+          name: formData.name.trim(),
+          birthdate: new Date(formData.birthdate),
+          application: formData.application,
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        },
+      })
 
-      await apiClient.updatePersonById(personId, updateRequest)
-      router.push("/")
-    } catch (error) {
-      console.error("Failed to update person:", error)
-      setErrors({ submit: "Erreur lors de la mise à jour de la personne" })
+      if (response.status === 200) {
+        router.push("/")
+      } else {
+        setErrors({ submit: "Erreur lors de la mise à jour de la personne" })
+      }
     } finally {
       setSubmitting(false)
     }
@@ -131,13 +145,11 @@ export default function EditPersonPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
   }
 
-  // Loading state
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
@@ -233,7 +245,7 @@ export default function EditPersonPage() {
 
             {/* Birthdate Field */}
             <div className="space-y-2">
-              <Label htmlFor="birthdate">Date d'anniversaire *</Label>
+              <Label htmlFor="birthdate">Date d&apos;anniversaire *</Label>
               <Input
                 id="birthdate"
                 type="date"
@@ -277,11 +289,11 @@ export default function EditPersonPage() {
                       className={errors.channelId ? "border-destructive" : ""}
                     />
                     {errors.channelId && <p className="text-sm text-destructive">{errors.channelId}</p>}
-                    <p className="text-xs text-muted-foreground">L'ID du canal Slack où envoyer les notifications</p>
+                    <p className="text-xs text-muted-foreground">L&apos;ID du canal Slack où envoyer les notifications</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="userId">ID de l'utilisateur *</Label>
+                    <Label htmlFor="userId">ID de l&apos;utilisateur *</Label>
                     <Input
                       id="userId"
                       type="text"
@@ -291,7 +303,7 @@ export default function EditPersonPage() {
                       className={errors.userId ? "border-destructive" : ""}
                     />
                     {errors.userId && <p className="text-sm text-destructive">{errors.userId}</p>}
-                    <p className="text-xs text-muted-foreground">L'ID de l'utilisateur Slack à mentionner</p>
+                    <p className="text-xs text-muted-foreground">L&apos;ID de l&apos;utilisateur Slack à mentionner</p>
                   </div>
                 </div>
               </>
