@@ -65,18 +65,16 @@ export default function DashboardPage() {
     fetchPeople(currentPage, search)
   }, [currentPage, search])
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDelete = async (id: number) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette personne ?")) {
       return
     }
 
-    try {
-      // await apiClient.deletePersonById({ id })
-      const response = await peopleClient.getPaginatedPeople({ query: { pageNumber: currentPage, pageSize: 10, search } })
-      console.log(response)
-    } catch (error) {
-      console.error("Failed to delete person:", error)
+    const response = await peopleClient.deletePersonById({ params: { id } })
+    if (response.status === 200) {
+      fetchPeople(currentPage, search)
+    } else {
+      console.error("Failed to delete person:", response.status)
     }
   }
 
@@ -116,7 +114,10 @@ export default function DashboardPage() {
               <Input
                 placeholder="Rechercher par nom..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setCurrentPage(1) // Reset pagination to page 1 when searching
+                }}
                 className="pl-10"
               />
             </div>
