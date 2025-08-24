@@ -28,7 +28,7 @@ html {
       </head>
       <body>
         <main className="min-h-screen bg-background">
-          <div className="max-w-6xl mx-auto px-6 py-8">{children}</div>
+          <div className="max-w-6xl mx-auto">{children}</div>
         </main>
       </body>
     </html>
