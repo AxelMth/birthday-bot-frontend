@@ -20,7 +20,7 @@ export default function CreatePersonPage() {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
-    birthdate: "",
+    birthDate: "",
     application: "",
     channelId: "",
     userId: "",
@@ -34,8 +34,8 @@ export default function CreatePersonPage() {
       newErrors.name = "Le nom est requis"
     }
 
-    if (!formData.birthdate) {
-      newErrors.birthdate = "La date d'anniversaire est requise"
+    if (!formData.birthDate) {
+      newErrors.birthDate = "La date d'anniversaire est requise"
     }
 
     if (!formData.application) {
@@ -75,7 +75,7 @@ export default function CreatePersonPage() {
       await peopleClient.createPerson({
         body: {
           name: formData.name.trim(),
-          birthdate: new Date(formData.birthdate),
+          birthDate: new Date(formData.birthDate),
           application: formData.application,
           metadata: Object.keys(metadata).length > 0 ? metadata as Record<string, string | number | boolean> : undefined,
         },
@@ -138,15 +138,15 @@ export default function CreatePersonPage() {
 
             {/* Birthdate Field */}
             <div className="space-y-2">
-              <Label htmlFor="birthdate">Date d'anniversaire *</Label>
+              <Label htmlFor="birthDate">Date d'anniversaire *</Label>
               <Input
-                id="birthdate"
+                id="birthDate"
                 type="date"
-                value={formData.birthdate}
-                onChange={(e) => handleInputChange("birthdate", e.target.value)}
-                className={errors.birthdate ? "border-destructive" : ""}
+                value={formData.birthDate}
+                onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                className={errors.birthDate ? "border-destructive" : ""}
               />
-              {errors.birthdate && <p className="text-sm text-destructive">{errors.birthdate}</p>}
+              {errors.birthDate && <p className="text-sm text-destructive">{errors.birthDate}</p>}
             </div>
 
             {/* Application Field */}

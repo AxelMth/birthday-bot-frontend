@@ -16,7 +16,7 @@ import Link from "next/link"
 
 type PersonFormData = {
   name: string | undefined
-  birthdate: string | undefined
+  birthDate: string | undefined
   application: string | undefined
   applicationMetadata: Record<string, string> | undefined
 }
@@ -38,7 +38,7 @@ export default function EditPersonPage() {
   const [contactMethods, setContactMethods] = useState<ContactMethod[] | null>(null)
   const [formData, setFormData] = useState<PersonFormData>({
     name: undefined,
-    birthdate: undefined,
+    birthDate: undefined,
     application: undefined,
     applicationMetadata: undefined,
   })
@@ -59,7 +59,7 @@ export default function EditPersonPage() {
           setPersonName(person.name ?? "")
           setFormData({
             name: person.name,
-            birthdate: person.birthdate?.toISOString().split("T")[0],
+            birthDate: person.birthDate?.toISOString().split("T")[0],
             application: person.application,
             applicationMetadata: person.metadata as Record<string, string>,
           })
@@ -105,8 +105,8 @@ export default function EditPersonPage() {
       newErrors.name = "Le nom est requis"
     }
 
-    if (!formData.birthdate) {
-      newErrors.birthdate = "La date d'anniversaire est requise"
+    if (!formData.birthDate) {
+      newErrors.birthDate = "La date d'anniversaire est requise"
     }
 
     if (!formData.application) {
@@ -135,7 +135,7 @@ export default function EditPersonPage() {
         },
         body: {
           name: formData.name?.trim(),
-          birthdate: new Date(formData.birthdate ?? ""),
+          birthDate: new Date(formData.birthDate ?? ""),
           application: formData.application,
           metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         },
@@ -253,32 +253,16 @@ export default function EditPersonPage() {
 
             {/* Birthdate Field */}
             <div className="space-y-2">
-              <Label htmlFor="birthdate">Date d&apos;anniversaire *</Label>
+              <Label htmlFor="birthDate">Date d&apos;anniversaire *</Label>
               <Input
-                id="birthdate"
+                id="birthDate"
                 type="date"
-                value={formData.birthdate}
-                onChange={(e) => handleInputChange("birthdate", e.target.value)}
-                className={errors.birthdate ? "border-destructive" : ""}
+                value={formData.birthDate}
+                onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                className={errors.birthDate ? "border-destructive" : ""}
               />
-              {errors.birthdate && <p className="text-sm text-destructive">{errors.birthdate}</p>}
+              {errors.birthDate && <p className="text-sm text-destructive">{errors.birthDate}</p>}
             </div>
-
-            {/* Application Field */}
-            <div className="space-y-2">
-              <Label htmlFor="application">Application *</Label>
-              <Select value={formData.application} onValueChange={(value) => handleInputChange("application", value)}>
-                <SelectTrigger className={errors.application ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Sélectionnez une application" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="slack">Slack</SelectItem>
-                  <SelectItem value="none">Aucune application</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.application && <p className="text-sm text-destructive">{errors.application}</p>}
-            </div>
-
 
             {/* Application Selection Field */}
             <div className="space-y-2">
@@ -288,8 +272,8 @@ export default function EditPersonPage() {
                   <SelectValue placeholder="Sélectionnez une application" />
                 </SelectTrigger>
                 <SelectContent>
-                  {applicationNames.map((applicationName: string) => (
-                    <SelectItem key={applicationName} value={applicationName}>
+                  {applicationNames.map((applicationName: string, index: number) => (
+                    <SelectItem key={applicationName + index} value={applicationName}>
                       {applicationName}
                     </SelectItem>
                   ))}

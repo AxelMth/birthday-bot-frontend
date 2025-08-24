@@ -7,9 +7,16 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { peopleClient } from "@/lib/api-client"
-import type { Person } from "@/lib/types"
 import Link from "next/link"
 
+
+type Person = {
+  id: number
+  name: string
+  birthDate: Date
+  application: string
+  applicationMetadata: Record<string, string | number | boolean>
+}
 
 export default function DashboardPage() {
   const [people, setPeople] = useState<Person[]>([])
@@ -27,17 +34,12 @@ export default function DashboardPage() {
       setConnectionError(false)
       const response = await peopleClient.getPaginatedPeople({ query: { pageNumber: page, pageSize: pageSize, ...(searchTerm ? { search: searchTerm } : {}) } })
       if (response.status === 200) {
-        console.log(response.body)
         setPeople(response.body.people?.map((person) => ({
           id: person.id ?? 0,
           name: person.name ?? "",
-          birthdate: person.birthdate ?? new Date(),
+          birthDate: person.birthDate ?? null,
           application: person.application ?? "",
-          metadata: person.metadata ?? {},
-          communications: [{
-            application: person.application ?? "",
-            metadata: person.metadata ?? {},
-          }]
+          applicationMetadata: person.applicationMetadata ?? {},
         })) as Person[])
         setTotalPages(Math.ceil((response.body.count ?? 0) / pageSize))
         setTotal(response.body.count ?? 0)
@@ -79,7 +81,10 @@ export default function DashboardPage() {
   }
 
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("fr-FR")
+    if (date) {
+      return new Date(date).toLocaleDateString("fr-FR")
+    }
+    return "N/A"
   }
 
   const getApplicationBadge = (application: string) => {
@@ -179,7 +184,7 @@ export default function DashboardPage() {
                     {people.map((person) => (
                       <TableRow key={person.id} className="hover:bg-muted/50">
                         <TableCell className="font-medium">{person.name}</TableCell>
-                        <TableCell>{formatDate(person.birthdate)}</TableCell>
+                        <TableCell>{formatDate(person.birthDate)}</TableCell>
                         <TableCell>{getApplicationBadge(person.application)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
