@@ -9,21 +9,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { Card, CardContent } from "@/components/ui/card"
 import { contactMethodsClient, peopleClient } from "@/lib/api-client"
 import Link from "next/link"
 
 type PersonFormData = {
   name: string | undefined
   birthDate: string | undefined
-  application: string | undefined
+  applicationName: string | undefined
   applicationMetadata: Record<string, string> | undefined
 }
 
 type ContactMethod = {
   id: number
-  application: string
+  applicationName: string
   applicationMetadata: Record<string, string>
 }
 
@@ -39,7 +38,7 @@ export default function EditPersonPage() {
   const [formData, setFormData] = useState<PersonFormData>({
     name: undefined,
     birthDate: undefined,
-    application: undefined,
+    applicationName: undefined,
     applicationMetadata: undefined,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -60,8 +59,8 @@ export default function EditPersonPage() {
           setFormData({
             name: person.name,
             birthDate: person.birthDate?.toISOString().split("T")[0],
-            application: person.application,
-            applicationMetadata: person.metadata as Record<string, string>,
+            applicationName: person.application ?? "",
+            applicationMetadata: person.applicationMetadata as Record<string, string>,
           })
         } else {
           setErrors({ fetch: "Erreur lors du chargement des données" })
@@ -84,8 +83,8 @@ export default function EditPersonPage() {
         const contactMethods = contactMethodsResponse.body.contactMethods ?? []
         setContactMethods(contactMethods.map((contactMethod) => ({
           id: contactMethod.id ?? 0,
-          application: contactMethod.application ?? "",
-          applicationMetadata: contactMethod.metadata as Record<string, string>,
+          applicationName: contactMethod.applicationName ?? "",
+          applicationMetadata: contactMethod.applicationMetadata as Record<string, string>,
         })))
       } else {
         setErrors({ fetch: "Erreur lors du chargement des méthodes de contact" })
@@ -95,7 +94,7 @@ export default function EditPersonPage() {
   }, [])
 
   const applicationNames = useMemo(() => {
-    return contactMethods?.map((contactMethod) => contactMethod.application) ?? []
+    return contactMethods?.map((contactMethod) => contactMethod.applicationName) ?? []
   }, [contactMethods])
   
   const validateForm = () => {
@@ -109,8 +108,8 @@ export default function EditPersonPage() {
       newErrors.birthDate = "La date d'anniversaire est requise"
     }
 
-    if (!formData.application) {
-      newErrors.application = "L'application est requise"
+    if (!formData.applicationName) {
+      newErrors.applicationName = "L'application est requise"
     }
 
     setErrors(newErrors)
@@ -136,8 +135,8 @@ export default function EditPersonPage() {
         body: {
           name: formData.name?.trim(),
           birthDate: new Date(formData.birthDate ?? ""),
-          application: formData.application,
-          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+          application: formData.applicationName,
+          applicationMetadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         },
       })
 
@@ -155,6 +154,13 @@ export default function EditPersonPage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
+    }
+  }
+
+  const handleApplicationMetadataChange = (key: string, value: string) => {
+    setFormData((prev) => ({ ...prev, applicationMetadata: { ...prev.applicationMetadata, [key]: value } }))
+    if (errors.applicationMetadata) {
+      setErrors((prev) => ({ ...prev, applicationMetadata: "" }))
     }
   }
 
@@ -232,9 +238,6 @@ export default function EditPersonPage() {
 
       {/* Form */}
       <Card>
-        <CardHeader>
-          <CardTitle>Informations de la personne</CardTitle>
-        </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Field */}
@@ -267,8 +270,8 @@ export default function EditPersonPage() {
             {/* Application Selection Field */}
             <div className="space-y-2">
               <Label htmlFor="application">Application *</Label>
-              <Select value={formData.application} onValueChange={(value) => handleInputChange("application", value)}>
-                <SelectTrigger className={errors.application ? "border-destructive" : ""}>
+              <Select value={formData.applicationName} onValueChange={(value) => handleInputChange("applicationName", value)}>
+                <SelectTrigger className={errors.applicationName ? "border-destructive" : ""}>
                   <SelectValue placeholder="Sélectionnez une application" />
                 </SelectTrigger>
                 <SelectContent>
@@ -283,13 +286,17 @@ export default function EditPersonPage() {
             </div>
 
             {/* Application Metadata Fields */}
-            {formData.application && contactMethods?.find((contactMethod) => contactMethod.application === formData.application) && (
-              <>
-                <Separator />
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-foreground">Configuration {formData.application}</h3>
-                </div>
-              </>
+            {formData.applicationName && contactMethods?.find((contactMethod) => contactMethod.applicationName === formData.applicationName) && (
+              <div className="space-y-4">
+                <span className="font-semibold text-foreground">Configuration {formData.applicationName}</span>
+
+                {Object.keys(contactMethods?.find((contactMethod) => contactMethod.applicationName === formData.applicationName)?.applicationMetadata ?? {}).map((key) => (
+                  <div key={key} className="space-y-2">
+                    <Label htmlFor={key}>{key}</Label>
+                    <Input id={key} type="text" value={formData.applicationMetadata?.[key]} onChange={(e) => handleApplicationMetadataChange(key, e.target.value)} />
+                  </div>
+                ))}
+              </div>
             )}
 
             {/* Submit Error */}
