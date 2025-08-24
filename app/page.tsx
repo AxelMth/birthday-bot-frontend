@@ -8,6 +8,8 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,9 +41,16 @@ export default function DashboardPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [connectionError, setConnectionError] = useState(false);
+  const [sortBy, setSortBy] = useState<"name" | "birthDate" | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const pageSize = 50;
 
-  const fetchPeople = async (page: number, searchTerm?: string) => {
+  const fetchPeople = async (
+    page: number,
+    searchTerm?: string,
+    sortField?: "name" | "birthDate" | null,
+    sortDirection?: "asc" | "desc"
+  ) => {
     try {
       setLoading(true);
       setConnectionError(false);
@@ -50,6 +59,8 @@ export default function DashboardPage() {
           pageNumber: page,
           pageSize: pageSize,
           ...(searchTerm ? { search: searchTerm } : {}),
+          ...(sortField ? { sortBy: sortField } : {}),
+          ...(sortField ? { sortOrder: sortDirection } : {}),
         },
       });
       if (response.status === 200) {
@@ -83,8 +94,8 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchPeople(currentPage, search);
-  }, [currentPage, search]);
+    fetchPeople(currentPage, search, sortBy, sortOrder);
+  }, [currentPage, search, sortBy, sortOrder]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette personne ?")) {
@@ -97,6 +108,27 @@ export default function DashboardPage() {
     } else {
       console.error("Failed to delete person:", response.status);
     }
+  };
+
+  const handleSort = (field: "name" | "birthDate") => {
+    if (sortBy === field) {
+      // Toggle sort order if same field
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      // Set new field and default to ascending
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  const getSortIcon = (field: "name" | "birthDate") => {
+    if (sortBy !== field) return null;
+    return sortOrder === "asc" ? (
+      <ChevronUp className="w-4 h-4 inline ml-1" />
+    ) : (
+      <ChevronDown className="w-4 h-4 inline ml-1" />
+    );
   };
 
   const formatDate = (date: Date) => {
@@ -212,9 +244,19 @@ export default function DashboardPage() {
                 <Table className="relative">
                   <TableHeader className="sticky top-0 bg-background">
                     <TableRow>
-                      <TableHead className="bg-background">Nom</TableHead>
-                      <TableHead className="bg-background">
+                      <TableHead
+                        className="bg-background cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort("name")}
+                      >
+                        Nom
+                        {getSortIcon("name")}
+                      </TableHead>
+                      <TableHead
+                        className="bg-background cursor-pointer hover:bg-muted/50 select-none"
+                        onClick={() => handleSort("birthDate")}
+                      >
                         Date d&apos;anniversaire
+                        {getSortIcon("birthDate")}
                       </TableHead>
                       <TableHead className="bg-background">
                         Application
@@ -277,7 +319,7 @@ export default function DashboardPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  fetchPeople(currentPage - 1, search);
+                  fetchPeople(currentPage - 1, search, sortBy, sortOrder);
                 }}
                 disabled={currentPage === 1}
                 className="cursor-pointer"
@@ -297,7 +339,7 @@ export default function DashboardPage() {
                       variant={pageNum === currentPage ? "default" : "outline"}
                       size="sm"
                       onClick={() => {
-                        fetchPeople(pageNum, search);
+                        fetchPeople(pageNum, search, sortBy, sortOrder);
                       }}
                       className="w-8 h-8 p-0 cursor-pointer"
                     >
@@ -310,7 +352,7 @@ export default function DashboardPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fetchPeople(currentPage + 1, search)}
+                onClick={() => fetchPeople(currentPage + 1, search, sortBy, sortOrder)}
                 disabled={currentPage === totalPages}
                 className="cursor-pointer"
               >
