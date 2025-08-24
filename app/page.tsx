@@ -209,8 +209,8 @@ export default function DashboardPage() {
           ) : (
             <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
               <div className="flex-1 overflow-y-auto">
-                <Table>
-                  <TableHeader className="sticky bg-background">
+                <Table className="relative">
+                  <TableHeader className="sticky top-0 bg-background">
                     <TableRow>
                       <TableHead className="bg-background">Nom</TableHead>
                       <TableHead className="bg-background">
