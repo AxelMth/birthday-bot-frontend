@@ -1,5 +1,8 @@
-import { initClient } from '@ts-rest/core';
-import { peopleContract, contractMethodsContract } from 'birthday-bot-contracts';
+import { initClient } from "@ts-rest/core";
+import {
+  peopleContract,
+  contractMethodsContract,
+} from "birthday-bot-contracts";
 
 const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
 export const peopleClient = initClient(peopleContract, {
@@ -7,8 +10,8 @@ export const peopleClient = initClient(peopleContract, {
   jsonQuery: true,
   validateResponse: true,
   baseHeaders: {
-    'Content-Type': 'application/json',
-    'Allow-Control-Allow-Origin': '*',
+    "Content-Type": "application/json",
+    "Allow-Control-Allow-Origin": "*",
   },
 });
 
@@ -17,7 +20,7 @@ export const contactMethodsClient = initClient(contractMethodsContract, {
   jsonQuery: true,
   validateResponse: true,
   baseHeaders: {
-    'Content-Type': 'application/json',
-    'Allow-Control-Allow-Origin': '*',
+    "Content-Type": "application/json",
+    "Allow-Control-Allow-Origin": "*",
   },
 });

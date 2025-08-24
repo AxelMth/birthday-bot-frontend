@@ -1,132 +1,155 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect, useMemo } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Save } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import { contactMethodsClient, peopleClient } from "@/lib/api-client"
-import Link from "next/link"
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { ArrowLeft, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { contactMethodsClient, peopleClient } from "@/lib/api-client";
+import Link from "next/link";
 
 type PersonFormData = {
-  name: string | undefined
-  birthDate: string | undefined
-  applicationName: string | undefined
-  applicationMetadata: Record<string, string> | undefined
-}
+  name: string | undefined;
+  birthDate: string | undefined;
+  applicationName: string | undefined;
+  applicationMetadata: Record<string, string> | undefined;
+};
 
 type ContactMethod = {
-  id: number
-  applicationName: string
-  applicationMetadata: Record<string, string>
-}
+  id: number;
+  applicationName: string;
+  applicationMetadata: Record<string, string>;
+};
 
 export default function EditPersonPage() {
-  const router = useRouter()
-  const params = useParams()
-  const personId = Number.parseInt(params.id as string)
+  const router = useRouter();
+  const params = useParams();
+  const personId = Number.parseInt(params.id as string);
 
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [personName, setPersonName] = useState<string | null>(null)
-  const [contactMethods, setContactMethods] = useState<ContactMethod[] | null>(null)
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [personName, setPersonName] = useState<string | null>(null);
+  const [contactMethods, setContactMethods] = useState<ContactMethod[] | null>(
+    null,
+  );
   const [formData, setFormData] = useState<PersonFormData>({
     name: undefined,
     birthDate: undefined,
     applicationName: undefined,
     applicationMetadata: undefined,
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Fetch person data on component mount
   useEffect(() => {
     const fetchPerson = async () => {
       try {
-        setLoading(true)
+        setLoading(true);
         const personData = await peopleClient.getPersonById({
           params: {
             id: personId,
           },
-        })
+        });
         if (personData.status === 200) {
-          const person = personData.body
-          setPersonName(person.name ?? "")
+          const person = personData.body;
+          setPersonName(person.name ?? "");
           setFormData({
             name: person.name,
             birthDate: person.birthDate?.toISOString().split("T")[0],
             applicationName: person.application ?? "",
-            applicationMetadata: person.applicationMetadata as Record<string, string>,
-          })
+            applicationMetadata: person.applicationMetadata as Record<
+              string,
+              string
+            >,
+          });
         } else {
-          setErrors({ fetch: "Erreur lors du chargement des données" })
+          setErrors({ fetch: "Erreur lors du chargement des données" });
         }
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
     if (personId) {
-      fetchPerson()
+      fetchPerson();
     }
-  }, [personId])
+  }, [personId]);
 
   useEffect(() => {
     const fetchContactMethods = async () => {
-      const contactMethodsResponse = await contactMethodsClient.getContactMethods()
+      const contactMethodsResponse =
+        await contactMethodsClient.getContactMethods();
 
       if (contactMethodsResponse.status === 200) {
-        const contactMethods = contactMethodsResponse.body.contactMethods ?? []
-        setContactMethods(contactMethods.map((contactMethod) => ({
-          id: contactMethod.id ?? 0,
-          applicationName: contactMethod.applicationName ?? "",
-          applicationMetadata: contactMethod.applicationMetadata as Record<string, string>,
-        })))
+        const contactMethods = contactMethodsResponse.body.contactMethods ?? [];
+        setContactMethods(
+          contactMethods.map((contactMethod) => ({
+            id: contactMethod.id ?? 0,
+            applicationName: contactMethod.applicationName ?? "",
+            applicationMetadata: contactMethod.applicationMetadata as Record<
+              string,
+              string
+            >,
+          })),
+        );
       } else {
-        setErrors({ fetch: "Erreur lors du chargement des méthodes de contact" })
+        setErrors({
+          fetch: "Erreur lors du chargement des méthodes de contact",
+        });
       }
-    }
-    fetchContactMethods()
-  }, [])
+    };
+    fetchContactMethods();
+  }, []);
 
   const applicationNames = useMemo(() => {
-    return contactMethods?.map((contactMethod) => contactMethod.applicationName) ?? []
-  }, [contactMethods])
-  
+    return (
+      contactMethods?.map((contactMethod) => contactMethod.applicationName) ??
+      []
+    );
+  }, [contactMethods]);
+
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!formData.name?.trim()) {
-      newErrors.name = "Le nom est requis"
+      newErrors.name = "Le nom est requis";
     }
 
     if (!formData.birthDate) {
-      newErrors.birthDate = "La date d'anniversaire est requise"
+      newErrors.birthDate = "La date d'anniversaire est requise";
     }
 
     if (!formData.applicationName) {
-      newErrors.applicationName = "L'application est requise"
+      newErrors.applicationName = "L'application est requise";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setSubmitting(true)
+    setSubmitting(true);
 
     try {
-      const metadata: Record<string, string> = formData.applicationMetadata as Record<string, string>
+      const metadata: Record<string, string> =
+        formData.applicationMetadata as Record<string, string>;
 
       const response = await peopleClient.updatePersonById({
         params: {
@@ -136,33 +159,37 @@ export default function EditPersonPage() {
           name: formData.name?.trim(),
           birthDate: new Date(formData.birthDate ?? ""),
           application: formData.applicationName,
-          applicationMetadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+          applicationMetadata:
+            Object.keys(metadata).length > 0 ? metadata : undefined,
         },
-      })
+      });
 
       if (response.status === 200) {
-        router.push("/")
+        router.push("/");
       } else {
-        setErrors({ submit: "Erreur lors de la mise à jour de la personne" })
+        setErrors({ submit: "Erreur lors de la mise à jour de la personne" });
       }
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
-  }
+  };
 
   const handleApplicationMetadataChange = (key: string, value: string) => {
-    setFormData((prev) => ({ ...prev, applicationMetadata: { ...prev.applicationMetadata, [key]: value } }))
+    setFormData((prev) => ({
+      ...prev,
+      applicationMetadata: { ...prev.applicationMetadata, [key]: value },
+    }));
     if (errors.applicationMetadata) {
-      setErrors((prev) => ({ ...prev, applicationMetadata: "" }))
+      setErrors((prev) => ({ ...prev, applicationMetadata: "" }));
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -175,8 +202,12 @@ export default function EditPersonPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Modifier un anniversaire</h1>
-            <p className="text-muted-foreground mt-1">Chargement des données...</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              Modifier un anniversaire
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Chargement des données...
+            </p>
           </div>
         </div>
         <Card>
@@ -187,7 +218,7 @@ export default function EditPersonPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   // Error state
@@ -202,22 +233,30 @@ export default function EditPersonPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Modifier un anniversaire</h1>
-            <p className="text-muted-foreground mt-1">Erreur lors du chargement</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              Modifier un anniversaire
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Erreur lors du chargement
+            </p>
           </div>
         </div>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
               <p className="text-destructive">{errors.fetch}</p>
-              <Button variant="outline" className="mt-4 bg-transparent" onClick={() => window.location.reload()}>
+              <Button
+                variant="outline"
+                className="mt-4 bg-transparent"
+                onClick={() => window.location.reload()}
+              >
                 Réessayer
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -231,8 +270,12 @@ export default function EditPersonPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Modifier un anniversaire</h1>
-          <p className="text-muted-foreground mt-1">Modifier les informations de {personName}</p>
+          <h1 className="text-3xl font-bold text-foreground">
+            Modifier un anniversaire
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Modifier les informations de {personName}
+          </p>
         </div>
       </div>
 
@@ -251,7 +294,9 @@ export default function EditPersonPage() {
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 className={errors.name ? "border-destructive" : ""}
               />
-              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name}</p>
+              )}
             </div>
 
             {/* Birthdate Field */}
@@ -264,40 +309,75 @@ export default function EditPersonPage() {
                 onChange={(e) => handleInputChange("birthDate", e.target.value)}
                 className={errors.birthDate ? "border-destructive" : ""}
               />
-              {errors.birthDate && <p className="text-sm text-destructive">{errors.birthDate}</p>}
+              {errors.birthDate && (
+                <p className="text-sm text-destructive">{errors.birthDate}</p>
+              )}
             </div>
 
             {/* Application Selection Field */}
             <div className="space-y-2">
               <Label htmlFor="application">Application *</Label>
-              <Select value={formData.applicationName} onValueChange={(value) => handleInputChange("applicationName", value)}>
-                <SelectTrigger className={errors.applicationName ? "border-destructive" : ""}>
+              <Select
+                value={formData.applicationName}
+                onValueChange={(value) =>
+                  handleInputChange("applicationName", value)
+                }
+              >
+                <SelectTrigger
+                  className={errors.applicationName ? "border-destructive" : ""}
+                >
                   <SelectValue placeholder="Sélectionnez une application" />
                 </SelectTrigger>
                 <SelectContent>
-                  {applicationNames.map((applicationName: string, index: number) => (
-                    <SelectItem key={applicationName + index} value={applicationName}>
-                      {applicationName}
-                    </SelectItem>
-                  ))}
+                  {applicationNames.map(
+                    (applicationName: string, index: number) => (
+                      <SelectItem
+                        key={applicationName + index}
+                        value={applicationName}
+                      >
+                        {applicationName}
+                      </SelectItem>
+                    ),
+                  )}
                 </SelectContent>
               </Select>
-              {errors.application && <p className="text-sm text-destructive">{errors.application}</p>}
+              {errors.application && (
+                <p className="text-sm text-destructive">{errors.application}</p>
+              )}
             </div>
 
             {/* Application Metadata Fields */}
-            {formData.applicationName && contactMethods?.find((contactMethod) => contactMethod.applicationName === formData.applicationName) && (
-              <div className="space-y-4">
-                <span className="font-semibold text-foreground">Configuration {formData.applicationName}</span>
+            {formData.applicationName &&
+              contactMethods?.find(
+                (contactMethod) =>
+                  contactMethod.applicationName === formData.applicationName,
+              ) && (
+                <div className="space-y-4">
+                  <span className="font-semibold text-foreground">
+                    Configuration {formData.applicationName}
+                  </span>
 
-                {Object.keys(contactMethods?.find((contactMethod) => contactMethod.applicationName === formData.applicationName)?.applicationMetadata ?? {}).map((key) => (
-                  <div key={key} className="space-y-2">
-                    <Label htmlFor={key}>{key}</Label>
-                    <Input id={key} type="text" value={formData.applicationMetadata?.[key]} onChange={(e) => handleApplicationMetadataChange(key, e.target.value)} />
-                  </div>
-                ))}
-              </div>
-            )}
+                  {Object.keys(
+                    contactMethods?.find(
+                      (contactMethod) =>
+                        contactMethod.applicationName ===
+                        formData.applicationName,
+                    )?.applicationMetadata ?? {},
+                  ).map((key) => (
+                    <div key={key} className="space-y-2">
+                      <Label htmlFor={key}>{key}</Label>
+                      <Input
+                        id={key}
+                        type="text"
+                        value={formData.applicationMetadata?.[key]}
+                        onChange={(e) =>
+                          handleApplicationMetadataChange(key, e.target.value)
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
             {/* Submit Error */}
             {errors.submit && (
@@ -313,7 +393,11 @@ export default function EditPersonPage() {
                   Annuler
                 </Button>
               </Link>
-              <Button type="submit" disabled={submitting} className="bg-primary hover:bg-primary/90">
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="bg-primary hover:bg-primary/90"
+              >
                 {submitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
@@ -331,5 +415,5 @@ export default function EditPersonPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

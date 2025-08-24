@@ -32,7 +32,9 @@
   --sidebar: oklch(0.985 0 0); /* #f8fafc - Sidebar background */
   --sidebar-foreground: oklch(0.205 0 0); /* #1f2937 - Sidebar text */
   --sidebar-primary: oklch(0.269 0 0); /* #374151 - Sidebar primary */
-  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff - Sidebar primary text */
+  --sidebar-primary-foreground: oklch(
+    1 0 0
+  ); /* #ffffff - Sidebar primary text */
   --sidebar-accent: oklch(0.488 0.243 264.376); /* #6366f1 - Sidebar accent */
   --sidebar-accent-foreground: oklch(1 0 0); /* #ffffff - Sidebar accent text */
   --sidebar-border: oklch(0.922 0 0); /* #e5e7eb - Sidebar borders */
