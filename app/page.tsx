@@ -169,18 +169,16 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background z-10">
-                  <TableRow>
-                    <TableHead className="bg-background">Nom</TableHead>
-                    <TableHead className="bg-background">Date d&apos;anniversaire</TableHead>
-                    <TableHead className="bg-background">Application</TableHead>
-                    <TableHead className="text-right bg-background">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-              </Table>
               <div className="flex-1 overflow-y-auto">
                 <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
+                    <TableRow>
+                      <TableHead className="bg-background">Nom</TableHead>
+                      <TableHead className="bg-background">Date d&apos;anniversaire</TableHead>
+                      <TableHead className="bg-background">Application</TableHead>
+                      <TableHead className="text-right bg-background">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
                   <TableBody>
                     {people.map((person) => (
                       <TableRow key={person.id} className="hover:bg-muted/50">
