@@ -6,8 +6,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
@@ -24,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { peopleClient } from "@/lib/api-client";
 import Link from "next/link";
+import { Pagination } from "@/components/pagination";
 
 type Person = {
   id: number;
@@ -49,7 +48,7 @@ export default function DashboardPage() {
     page: number,
     searchTerm?: string,
     sortField?: "name" | "birthDate" | null,
-    sortDirection?: "asc" | "desc"
+    sortDirection?: "asc" | "desc",
   ) => {
     try {
       setLoading(true);
@@ -309,59 +308,15 @@ export default function DashboardPage() {
 
       {/* Sticky Pagination */}
       {totalPages > 1 && (
-        <div className="flex-shrink-0 bg-background border-t border-border p-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Page {currentPage} sur {totalPages} ({total} résultats)
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  fetchPeople(currentPage - 1, search, sortBy, sortOrder);
-                }}
-                disabled={currentPage === 1}
-                className="cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Précédent
-              </Button>
-
-              {/* Page numbers */}
-              <div className="flex gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum =
-                    Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={pageNum === currentPage ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => {
-                        fetchPeople(pageNum, search, sortBy, sortOrder);
-                      }}
-                      className="w-8 h-8 p-0 cursor-pointer"
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fetchPeople(currentPage + 1, search, sortBy, sortOrder)}
-                disabled={currentPage === totalPages}
-                className="cursor-pointer"
-              >
-                Suivant
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        </div>
+        <Pagination
+          pageNumber={currentPage}
+          pageSize={pageSize}
+          totalItems={total}
+          goToPage={(page) => {
+            setCurrentPage(page);
+            fetchPeople(page, search, sortBy, sortOrder);
+          }}
+        />
       )}
     </div>
   );
