@@ -16,13 +16,15 @@ export const Pagination = ({
 }: PaginationProps) => {
   const totalPages = Math.ceil(totalItems / pageSize);
   return (
+
     <div className="flex-shrink-0 bg-background border-t border-border p-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Page {pageNumber} sur {totalPages} ({totalItems} résultats)
         </div>
+        {totalPages > 1 && (
         <div className="flex items-center gap-2">
-          <Button
+          {pageNumber > 1 && <Button
             variant="outline"
             size="sm"
             onClick={() => {
@@ -33,7 +35,7 @@ export const Pagination = ({
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
             Précédent
-          </Button>
+          </Button>}
 
           {/* Page numbers */}
           <div className="flex gap-1">
@@ -56,7 +58,7 @@ export const Pagination = ({
             })}
           </div>
 
-          <Button
+          {pageNumber < totalPages && <Button
             variant="outline"
             size="sm"
             onClick={() => goToPage(pageNumber + 1)}
@@ -65,8 +67,9 @@ export const Pagination = ({
           >
             Suivant
             <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
+            </Button>}
+          </div>
+        )}
       </div>
     </div>
   );

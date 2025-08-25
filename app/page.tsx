@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { peopleClient } from "@/lib/api-client";
 import Link from "next/link";
 import { Pagination } from "@/components/pagination";
+import { Header } from "@/components/header";
 
 type Person = {
   id: number;
@@ -154,14 +155,10 @@ export default function DashboardPage() {
       <div className="flex-shrink-0 bg-background border-b border-border">
         <div className="max-w-7xl mx-auto p-4 space-y-4">
           {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Tableau de bord
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Gérez les anniversaires et notifications ({total} personnes)
-            </p>
-          </div>
+          <Header
+            title="Tableau de bord"
+            description={`Gérez les anniversaires et notifications (${total} personnes)`}
+          />
 
           {/* Search and create button */}
           <div className="flex gap-4 items-center">
@@ -204,19 +201,8 @@ export default function DashboardPage() {
                 <div className="text-destructive">
                   <h3 className="font-semibold">Erreur de connexion</h3>
                   <p className="text-sm mt-1">
-                    Impossible de se connecter au serveur API.
+                    Impossible de se connecter au serveur.
                   </p>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Vérifiez que :</p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>
-                      La variable d&apos;environnement NEXT_PUBLIC_SERVER_URL
-                      est configurée
-                    </li>
-                    <li>Le serveur backend est en cours d&apos;exécution</li>
-                    <li>L&apos;URL du serveur est accessible</li>
-                  </ul>
                 </div>
                 <Button
                   variant="outline"
