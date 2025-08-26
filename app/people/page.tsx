@@ -26,6 +26,7 @@ import { Pagination } from "@/components/pagination";
 import { Header } from "@/components/header";
 import { Container } from "@/components/container";
 import { peopleClientService } from "@/lib/clients/people.client.service";
+import { useAuth } from "@/components/auth-context";
 
 type Person = {
   id: number;
@@ -36,13 +37,16 @@ type Person = {
 };
 
 export default function DashboardPage() {
+  const { isAdmin } = useAuth();
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [connectionError, setConnectionError] = useState(false);
-  const [sortBy, setSortBy] = useState<"name" | "birthDate" | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<"name" | "birthDate" | undefined>(
+    undefined,
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const pageSize = 50;
 
@@ -159,15 +163,17 @@ export default function DashboardPage() {
                   className="pl-10"
                 />
               </div>
-              <Link href="/person/create">
-                <Button
-                  size="default"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Créer une personne
-                </Button>
-              </Link>
+              {isAdmin && (
+                <Link href="/person/create">
+                  <Button
+                    size="default"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Créer une personne
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -231,9 +237,11 @@ export default function DashboardPage() {
                         <TableHead className="bg-background">
                           Application
                         </TableHead>
-                        <TableHead className="text-right bg-background">
-                          Actions
-                        </TableHead>
+                        {isAdmin && (
+                          <TableHead className="text-right bg-background">
+                            Actions
+                          </TableHead>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -246,27 +254,29 @@ export default function DashboardPage() {
                           <TableCell>
                             {getApplicationBadge(person.application)}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Link href={`/person/${person.id}/edit`}>
+                          {isAdmin && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Link href={`/person/${person.id}/edit`}>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="cursor-pointer"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                </Link>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="cursor-pointer"
+                                  onClick={() => handleDelete(person.id)}
+                                  className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
                                 >
-                                  <Pencil className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
-                              </Link>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDelete(person.id)}
-                                className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>

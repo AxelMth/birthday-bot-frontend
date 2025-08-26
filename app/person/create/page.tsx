@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +19,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { peopleClient } from "@/lib/api-client";
 import Link from "next/link";
+import { useAuth } from "@/components/auth-context";
 
 export default function CreatePersonPage() {
+  const { isAdmin } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,6 +33,41 @@ export default function CreatePersonPage() {
     userId: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Show 403 message if not admin
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+              <Lock className="w-6 h-6 text-destructive" />
+            </div>
+            <CardTitle className="text-destructive">Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              You need admin privileges to create new people. Please provide a
+              valid API key.
+            </p>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Add{" "}
+                <code className="bg-muted px-1 rounded">?apiKey=YOUR_KEY</code>{" "}
+                to the URL to authenticate.
+              </p>
+              <Link href="/people">
+                <Button variant="outline" className="w-full">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to People
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

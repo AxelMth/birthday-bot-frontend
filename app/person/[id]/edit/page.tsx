@@ -18,6 +18,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { contactMethodsClient, peopleClient } from "@/lib/api-client";
 import Link from "next/link";
+import { useAuth } from "@/components/auth-context";
 
 type PersonFormData = {
   name: string | undefined;
@@ -35,6 +36,7 @@ type ContactMethod = {
 export default function EditPersonPage() {
   const router = useRouter();
   const params = useParams();
+  const { isAdmin } = useAuth();
   const personId = Number.parseInt(params.id as string);
 
   const [loading, setLoading] = useState(true);
@@ -190,6 +192,10 @@ export default function EditPersonPage() {
       setErrors((prev) => ({ ...prev, applicationMetadata: "" }));
     }
   };
+
+  if (!isAdmin) {
+    return <div>Vous n&apos;avez pas les permissions nécessaires pour accéder à cette page.</div>;
+  }
 
   if (loading) {
     return (

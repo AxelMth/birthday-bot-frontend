@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Header as LayoutHeader } from "@/components/layout/header";
+import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,10 +28,12 @@ html {
         `}</style>
       </head>
       <body>
-        <LayoutHeader />
-        <main className="min-h-screen bg-background">
-          <div className="max-w-6xl mx-auto">{children}</div>
-        </main>
+        <AuthProvider>
+          <LayoutHeader />
+          <main className="min-h-screen bg-background">
+            <div className="max-w-6xl mx-auto">{children}</div>
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );
