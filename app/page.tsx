@@ -3,53 +3,27 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Header } from "@/components/header";
-import { birthdayClient } from "@/lib/api-client";
 import { Container } from "@/components/container";
-import { getNextDayDate, getNextWeekDate, getTodayDate } from "@/lib/date";
+import { getNextDayDate, getNextMonthDate, getNextWeekDate, getTodayDate } from "@/lib/date";
+import { birthdaysClientService } from "@/lib/clients/birthdays.client.service";
+import { Button } from "@/components/ui/button";
 
 type Person = {
   name: string;
   birthDate: Date;
 };
 
+type Range = "today" | "nextDay" | "nextWeek" | "nextMonth";
+
 export default function HomePage() {
   const [nextPeople, setNextPeople] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState(false);
 
   const peopleBirthdayByRange = useMemo(() => {
-    const today = getTodayDate();
-    const nextDay = getNextDayDate();
-    const nextWeek = getNextWeekDate();
-
-    const peopleByRange = nextPeople.reduce(
-      (acc, person) => {
-        const birthDateWithCurrentYear = new Date(
-          new Date().getFullYear(),
-          person.birthDate.getMonth(),
-          person.birthDate.getDate(),
-        );
-        if (birthDateWithCurrentYear === today) {
-          acc.today.push(person);
-        } else if (birthDateWithCurrentYear === nextDay) {
-          acc.nextDay.push(person);
-        } else if (birthDateWithCurrentYear < nextWeek) {
-          acc.nextWeek.push(person);
-        } else {
-          acc.nextMonth.push(person);
-        }
-        return acc;
-      },
-      { nextMonth: [], nextWeek: [], nextDay: [], today: [] } as {
-        nextMonth: Person[];
-        nextWeek: Person[];
-        nextDay: Person[];
-        today: Person[];
-      },
-    );
-
-    return peopleByRange;
+    return getPeopleByBirthdayRange(nextPeople);
   }, [nextPeople]);
 
-  // Add this state at the component level (where other useState calls are)
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >(() => {
@@ -63,23 +37,27 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchNextBirthdays = async () => {
-      const response = await birthdayClient.getNextBirthdays({
-        query: {
-          date: new Date(new Date().setMonth(new Date().getMonth() + 1))
-            .toISOString()
-            .split("T")[0],
-        },
-      });
-      if (response.status === 200) {
+      const nextMonth = getNextMonthDate();
+      const { data, error } = await birthdaysClientService.getNextBirthdays(
+        nextMonth.toISOString().split("T")[0],
+      );
+      if (error) {
+        setConnectionError(true);
+        return;
+      }
+      if (data) {
         setNextPeople(
-          response.body?.people?.map((person) => ({
+          data.people.map((person) => ({
             name: person.name ?? "",
             birthDate: new Date(person.birthDate ?? ""),
           })) ?? [],
         );
       }
     };
+    setLoading(true);
+    setConnectionError(false);
     fetchNextBirthdays();
+    setLoading(false);
   }, []);
 
   const getRangeName = (range: string) => {
@@ -96,17 +74,31 @@ export default function HomePage() {
     }
   };
 
-  const rangeOrder = ["today", "nextDay", "nextWeek", "nextMonth"];
+  const rangeOrder: Range[] = ["today", "nextDay", "nextWeek", "nextMonth"];
 
   return (
     <Container>
       <Header title="Accueil" description="Bienvenue sur le tableau de bord" />
 
       <div className="space-y-4">
-        {rangeOrder.map((range) => {
-          const people =
-            peopleBirthdayByRange[range as keyof typeof peopleBirthdayByRange];
-          const isExpanded = expandedSections[range] || false;
+        {loading ? (
+          <div className="flex justify-center items-center flex-1">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : connectionError ? (
+          <div className="flex justify-center items-center flex-1">
+            <div className="text-center space-y-4">
+              <p>Une erreur est survenue lors de la récupération des données.</p>
+              <Button onClick={() => window.location.reload()}>
+                Réessayer
+              </Button>
+            </div>
+          </div>
+        ) : (
+          rangeOrder.map((range) => {
+            const people =
+              peopleBirthdayByRange[range as keyof typeof peopleBirthdayByRange];
+            const isExpanded = expandedSections[range] || false;
 
           const toggleExpanded = () => {
             setExpandedSections((prev) => ({
@@ -192,9 +184,39 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </Container>
   );
+}
+
+function getPeopleByBirthdayRange(people: Person[]): Record<Range, Person[]> {
+  const today = getTodayDate();
+  const nextDay = getNextDayDate();
+  const nextWeek = getNextWeekDate();
+
+  const peopleByRange = people.reduce((acc, person) => {
+    const birthDateWithCurrentYear = new Date(
+      new Date().getFullYear(),
+      person.birthDate.getMonth(),
+      person.birthDate.getDate(),
+    );
+    if (birthDateWithCurrentYear === today) {
+      acc.today.push(person);
+    } else if (birthDateWithCurrentYear === nextDay) {
+      acc.nextDay.push(person);
+    } else if (birthDateWithCurrentYear < nextWeek) {
+      acc.nextWeek.push(person);
+    } else {
+      acc.nextMonth.push(person);
+    }
+    return acc;
+  }, { today: [], nextDay: [], nextWeek: [], nextMonth: [] } as Record<Range, Person[]>);
+
+  return Object.entries(peopleByRange).reduce((acc, [range, people]) => {
+    acc[range as Range] = people.sort((a, b) => a.birthDate.getTime() - b.birthDate.getTime());
+    return acc;
+  }, {} as Record<Range, Person[]>);
 }
