@@ -12,7 +12,7 @@ export const peopleClient = initClient(peopleContract, {
 type Person = {
   id: number;
   name: string;
-  birthDate: string;
+  birthDate: Date;
   application: string;
   applicationMetadata: Record<string, string | number | boolean>;
 };
@@ -28,9 +28,18 @@ export class PeopleClientService {
   async getPaginatedPeople(
     pageNumber: number,
     pageSize: number,
+    searchTerm?: string,
+    sortField?: "name" | "birthDate",
+    sortDirection?: "asc" | "desc",
   ): Promise<Response<PaginatedPeopleResponse>> {
     const response = await this.client.getPaginatedPeople({
-      query: { pageNumber, pageSize },
+      query: {
+        pageNumber,
+        pageSize,
+        ...(searchTerm ? { search: searchTerm } : {}),
+        ...(sortField ? { sortBy: sortField } : {}),
+        ...(sortField ? { sortOrder: sortDirection } : {}),
+      },
     });
     if (response.status === 200) {
       return {
@@ -39,7 +48,7 @@ export class PeopleClientService {
             response.body?.people?.map((person) => ({
               id: person.id ?? 0,
               name: person.name ?? "",
-              birthDate: person.birthDate?.toISOString() ?? "",
+              birthDate: person.birthDate ?? new Date(),
               application: person.application ?? "",
               applicationMetadata: person.applicationMetadata ?? {},
             })) ?? [],
@@ -80,7 +89,7 @@ export class PeopleClientService {
         data: {
           id: response.body?.id ?? 0,
           name: response.body?.name ?? "",
-          birthDate: response.body?.birthDate?.toISOString() ?? "",
+          birthDate: response.body?.birthDate ?? new Date(),
           application: response.body?.application ?? "",
           applicationMetadata: response.body?.applicationMetadata ?? {},
         },
@@ -114,7 +123,7 @@ export class PeopleClientService {
         data: {
           id: response.body?.id ?? 0,
           name: response.body?.name ?? "",
-          birthDate: response.body?.birthDate?.toISOString() ?? "",
+          birthDate: response.body?.birthDate ?? new Date(),
           application: response.body?.application ?? "",
           applicationMetadata: response.body?.applicationMetadata ?? {},
         },

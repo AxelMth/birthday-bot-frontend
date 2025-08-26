@@ -67,5 +67,6 @@ export class CommunicationsClientService {
   }
 }
 
-
-export const communicationsClientService = new CommunicationsClientService(communicationClient);
+export const communicationsClientService = new CommunicationsClientService(
+  communicationClient,
+);

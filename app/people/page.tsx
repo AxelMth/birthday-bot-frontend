@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Search,
   Plus,
@@ -25,6 +25,7 @@ import Link from "next/link";
 import { Pagination } from "@/components/pagination";
 import { Header } from "@/components/header";
 import { Container } from "@/components/container";
+import { peopleClientService } from "@/lib/clients/people.client.service";
 
 type Person = {
   id: number;
@@ -39,63 +40,47 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [connectionError, setConnectionError] = useState(false);
-  const [sortBy, setSortBy] = useState<"name" | "birthDate" | null>(null);
+  const [sortBy, setSortBy] = useState<"name" | "birthDate" | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const pageSize = 50;
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(total / pageSize);
+  }, [total, pageSize]);
 
   const fetchPeople = async (
     page: number,
     searchTerm?: string,
-    sortField?: "name" | "birthDate" | null,
+    sortField?: "name" | "birthDate",
     sortDirection?: "asc" | "desc",
   ) => {
-    try {
-      setLoading(true);
-      setConnectionError(false);
-      const response = await peopleClient.getPaginatedPeople({
-        query: {
-          pageNumber: page,
-          pageSize: pageSize,
-          ...(searchTerm ? { search: searchTerm } : {}),
-          ...(sortField ? { sortBy: sortField } : {}),
-          ...(sortField ? { sortOrder: sortDirection } : {}),
-        },
-      });
-      if (response.status === 200) {
-        setPeople(
-          response.body.people?.map((person) => ({
-            id: person.id ?? 0,
-            name: person.name ?? "",
-            birthDate: person.birthDate ?? null,
-            application: person.application ?? "",
-            applicationMetadata: person.applicationMetadata ?? {},
-          })) as Person[],
-        );
-        setTotalPages(Math.ceil((response.body.count ?? 0) / pageSize));
-        setTotal(response.body.count ?? 0);
-        setCurrentPage(page);
-      } else {
-        setConnectionError(true);
-        setPeople([]);
-        setTotal(0);
-        setTotalPages(1);
-      }
-    } catch (error) {
-      console.error("Failed to fetch people:", error);
+    const { data, error } = await peopleClientService.getPaginatedPeople(
+      page,
+      pageSize,
+      searchTerm,
+      sortField,
+      sortDirection,
+    );
+    if (data?.people?.length && data.count) {
+      setPeople(data.people);
+      setTotal(data.count);
+    } else if (error) {
       setConnectionError(true);
       setPeople([]);
       setTotal(0);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
+      setConnectionError(true);
     }
   };
 
   useEffect(() => {
+    setLoading(true);
+    setConnectionError(false);
+    setPeople([]);
+    setTotal(0);
     fetchPeople(currentPage, search, sortBy, sortOrder);
+    setLoading(false);
   }, [currentPage, search, sortBy, sortOrder]);
 
   const handleDelete = async (id: number) => {

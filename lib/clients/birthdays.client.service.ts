@@ -56,4 +56,6 @@ export class BirthdaysClientService {
   }
 }
 
-export const birthdaysClientService = new BirthdaysClientService(birthdayClient);
+export const birthdaysClientService = new BirthdaysClientService(
+  birthdayClient,
+);
