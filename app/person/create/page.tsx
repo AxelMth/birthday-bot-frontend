@@ -157,7 +157,8 @@ export default function CreatePersonPage() {
             Créer une personne
           </h1>
           <p className="text-muted-foreground mt-1">
-            Ajouter une nouvelle personne pour les notifications d&apos;anniversaire
+            Ajouter une nouvelle personne pour les notifications
+            d&apos;anniversaire
           </p>
         </div>
       </div>

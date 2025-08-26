@@ -12,7 +12,7 @@ export const peopleClient = initClient(peopleContract, {
 type Person = {
   id: number;
   name: string;
-  birthDate: Date;
+  birthDate: Date | null;
   application: string;
   applicationMetadata: Record<string, string | number | boolean>;
 };
@@ -31,7 +31,7 @@ export class PeopleClientService {
     searchTerm?: string,
     sortField?: "name" | "birthDate",
     sortDirection?: "asc" | "desc",
-  ): Promise<Response<PaginatedPeopleResponse>> {
+  ): Promise<Response<PaginatedPeopleResponse | null>> {
     const response = await this.client.getPaginatedPeople({
       query: {
         pageNumber,
@@ -59,10 +59,7 @@ export class PeopleClientService {
     }
     if (response.status === 500) {
       return {
-        data: {
-          people: [],
-          count: 0,
-        },
+        data: null,
         error: response.body?.error ?? "Failed to get people",
       };
     }
@@ -79,7 +76,8 @@ export class PeopleClientService {
     const response = await this.client.createPerson({
       body: {
         name: person.name,
-        birthDate: new Date(person.birthDate),
+        // TODO: handle null birthDate
+        birthDate: person.birthDate ? new Date(person.birthDate) : new Date(),
         application: person.application,
         applicationMetadata: person.applicationMetadata,
       },
@@ -113,7 +111,8 @@ export class PeopleClientService {
       params: { id: person.id },
       body: {
         name: person.name,
-        birthDate: new Date(person.birthDate),
+        // TODO: handle null birthDate
+        birthDate: person.birthDate ? new Date(person.birthDate) : new Date(),
         application: person.application,
         applicationMetadata: person.applicationMetadata,
       },
@@ -123,7 +122,7 @@ export class PeopleClientService {
         data: {
           id: response.body?.id ?? 0,
           name: response.body?.name ?? "",
-          birthDate: response.body?.birthDate ?? new Date(),
+          birthDate: response.body?.birthDate ?? null,
           application: response.body?.application ?? "",
           applicationMetadata: response.body?.applicationMetadata ?? {},
         },

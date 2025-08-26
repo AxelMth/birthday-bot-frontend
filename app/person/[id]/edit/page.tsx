@@ -194,7 +194,12 @@ export default function EditPersonPage() {
   };
 
   if (!isAdmin) {
-    return <div>Vous n&apos;avez pas les permissions nécessaires pour accéder à cette page.</div>;
+    return (
+      <div>
+        Vous n&apos;avez pas les permissions nécessaires pour accéder à cette
+        page.
+      </div>
+    );
   }
 
   if (loading) {

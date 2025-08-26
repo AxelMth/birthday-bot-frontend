@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Search,
   Plus,
@@ -31,7 +31,7 @@ import { useAuth } from "@/components/auth-context";
 type Person = {
   id: number;
   name: string;
-  birthDate: Date;
+  birthDate: Date | null;
   application: string;
   applicationMetadata: Record<string, string | number | boolean>;
 };
@@ -54,38 +54,29 @@ export default function DashboardPage() {
     return Math.ceil(total / pageSize);
   }, [total, pageSize]);
 
-  const fetchPeople = async (
-    page: number,
-    searchTerm?: string,
-    sortField?: "name" | "birthDate",
-    sortDirection?: "asc" | "desc",
+  const fetchPeople = useCallback(async (
   ) => {
     const { data, error } = await peopleClientService.getPaginatedPeople(
-      page,
+      currentPage,
       pageSize,
-      searchTerm,
-      sortField,
-      sortDirection,
+      search,
+      sortBy,
+      sortOrder,
     );
-    if (data?.people?.length && data.count) {
+    if (data) {
       setPeople(data.people);
       setTotal(data.count);
     } else if (error) {
       setConnectionError(true);
-      setPeople([]);
-      setTotal(0);
-      setConnectionError(true);
     }
-  };
+  }, [currentPage, search, sortBy, sortOrder]);
 
   useEffect(() => {
     setLoading(true);
     setConnectionError(false);
-    setPeople([]);
-    setTotal(0);
-    fetchPeople(currentPage, search, sortBy, sortOrder);
+    fetchPeople();
     setLoading(false);
-  }, [currentPage, search, sortBy, sortOrder]);
+  }, [currentPage, search, sortBy, sortOrder, fetchPeople]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette personne ?")) {
@@ -94,7 +85,7 @@ export default function DashboardPage() {
 
     const response = await peopleClient.deletePersonById({ params: { id } });
     if (response.status === 200) {
-      fetchPeople(currentPage, search);
+      fetchPeople();
     } else {
       console.error("Failed to delete person:", response.status);
     }
@@ -121,7 +112,7 @@ export default function DashboardPage() {
     );
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | null) => {
     if (date) {
       return new Date(date).toLocaleDateString("fr-FR");
     }
@@ -198,7 +189,7 @@ export default function DashboardPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      fetchPeople(currentPage, search);
+                      fetchPeople();
                     }}
                     className="cursor-pointer"
                   >
@@ -295,7 +286,7 @@ export default function DashboardPage() {
             totalItems={total}
             goToPage={(page) => {
               setCurrentPage(page);
-              fetchPeople(page, search, sortBy, sortOrder);
+              fetchPeople();
             }}
           />
         )}
