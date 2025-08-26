@@ -1,0 +1,309 @@
+:root {
+  /* layout tokens */
+  --header-h: 56px;
+  --content-max-width: 1200px;
+  --page-pad-x: 16px;
+  --page-gap: 12px;
+  --radius: 10px;
+
+  /* table tokens */
+  --table-row-h: 44px;
+  --table-header-h: 44px;
+
+  /* shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.08);
+
+  /* default (will be overridden by themes) */
+  --bg: #ffffff;
+  --bg-muted: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f7f7f8;
+  --text: #0e1116;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --brand: #4f46e5;
+  --brand-contrast: #ffffff;
+  --link: var(--brand);
+  --link-active: #0f172a;
+  --table-stripe: #fafafa;
+  --table-hover: #f5f7fb;
+}
+
+/* Light theme */
+:root,
+[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-muted: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f7f7f8;
+  --text: #0e1116;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --brand: #4f46e5;
+  --brand-contrast: #ffffff;
+  --link: var(--brand);
+  --link-active: #0f172a;
+  --table-stripe: #fafafa;
+  --table-hover: #f5f7fb;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --bg: #0b0e14;
+  --bg-muted: #0f131b;
+  --surface: #0f141b;
+  --surface-2: #131a22;
+  --text: #e6e6e6;
+  --muted: #9aa4b2;
+  --border: #222a35;
+  --brand: #7aa2f7;
+  --brand-contrast: #0b0e14;
+  --link: #7aa2f7;
+  --link-active: #ffffff;
+  --table-stripe: #0f141b;
+  --table-hover: #151c26;
+}
+
+/* Ocean theme */
+[data-theme="ocean"] {
+  --bg: #f8fafc;
+  --bg-muted: #eef3f8;
+  --surface: #ffffff;
+  --surface-2: #f2f6fb;
+  --text: #0b1220;
+  --muted: #61708a;
+  --border: #dbe3ee;
+  --brand: #0ea5e9;
+  --brand-contrast: #ffffff;
+  --link: #0284c7;
+  --link-active: #0b1220;
+  --table-stripe: #f5f9ff;
+  --table-hover: #edf6ff;
+}
+
+/* Forest theme */
+[data-theme="forest"] {
+  --bg: #fbfefc;
+  --bg-muted: #f0f7f2;
+  --surface: #ffffff;
+  --surface-2: #f4f8f5;
+  --text: #0d140f;
+  --muted: #65756a;
+  --border: #dbe6de;
+  --brand: #16a34a;
+  --brand-contrast: #ffffff;
+  --link: #15803d;
+  --link-active: #0d140f;
+  --table-stripe: #f2faf5;
+  --table-hover: #eaf7ef;
+}
+
+/* global app shell */
+.app-shell {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* site header (always visible) */
+.app-header {
+  position: sticky;
+  top: 0;
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 50;
+}
+
+.app-header__inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 var(--page-pad-x);
+}
+
+.app-header__brand {
+  font-weight: 700;
+}
+
+.app-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.app-header__link {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.app-header__link:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.app-header__link[aria-current="page"] {
+  background: var(--brand);
+  color: var(--brand-contrast);
+}
+
+/* unified content container */
+.container {
+  max-width: var(--content-max-width);
+  padding: 0 var(--page-pad-x);
+  margin: 0 auto;
+}
+
+/* page shell: title, actions, content (scroll), pagination */
+.page {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--page-gap);
+  height: calc(100dvh - var(--header-h));
+  background: var(--bg);
+}
+
+.page__title {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  font-weight: 700;
+  margin-top: 12px;
+}
+
+.page__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+/* only this middle area scrolls */
+.page__content {
+  min-height: 0; /* required for grid child to allow overflow */
+  overflow: auto;
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+/* pagination stays visible (page does not scroll) */
+.page__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+}
+
+/* table standardization */
+.table-wrap {
+  /* table scroll container inside page__content */
+  min-height: 100%;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: left;
+  height: var(--table-header-h);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+}
+
+.table tbody td {
+  height: var(--table-row-h);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+  color: var(--text);
+}
+
+.table tbody tr:nth-child(2n) td {
+  background: var(--table-stripe);
+}
+
+.table tbody tr:hover td {
+  background: var(--table-hover);
+}
+
+/* rounded corners for table */
+.table thead th:first-child,
+.table tbody td:first-child {
+  padding-left: 14px;
+}
+
+.table thead th:last-child,
+.table tbody td:last-child {
+  padding-right: 14px;
+}
+
+.table thead tr:first-child th:first-child {
+  border-top-left-radius: var(--radius);
+}
+
+.table thead tr:first-child th:last-child {
+  border-top-right-radius: var(--radius);
+}
+
+.table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: var(--radius);
+}
+
+.table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--radius);
+}
+
+/* utility */
+.text-muted {
+  color: var(--muted);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.btn:hover {
+  background: var(--surface-2);
+}
+.btn--primary {
+  background: var(--brand);
+  color: var(--brand-contrast);
+  border-color: transparent;
+}
+.btn--primary:hover {
+  filter: brightness(0.95);
+}
+.input {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 0 10px;
+  background: var(--surface);
+  color: var(--text);
+}

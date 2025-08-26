@@ -2,8 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { Header } from "@/components/header";
-import { Container } from "@/components/container";
+import {
+  Page,
+  PageTitle,
+  PageContent,
+  PagePagination,
+} from "@/components/layout/page";
 import {
   getNextDayDate,
   getNextMonthDate,
@@ -82,122 +86,152 @@ export default function HomePage() {
   const rangeOrder: Range[] = ["today", "nextDay", "nextWeek", "nextMonth"];
 
   return (
-    <Container>
-      <Header title="Accueil" description="Bienvenue sur le tableau de bord" />
+    <Page>
+      <PageTitle>
+        <h1 className="text-2xl font-bold">Accueil</h1>
+      </PageTitle>
 
-      <div className="space-y-4">
-        {loading ? (
-          <div className="flex justify-center items-center flex-1">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : connectionError ? (
-          <div className="flex justify-center items-center flex-1">
-            <div className="text-center space-y-4">
-              <p>
-                Une erreur est survenue lors de la récupération des données.
-              </p>
-              <Button onClick={() => window.location.reload()}>
-                Réessayer
-              </Button>
+      <PageContent>
+        <div className="space-y-4 p-4">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          </div>
-        ) : (
-          rangeOrder.map((range) => {
-            const people =
-              peopleBirthdayByRange[
-                range as keyof typeof peopleBirthdayByRange
-              ];
-            const isExpanded = expandedSections[range] || false;
-
-            const toggleExpanded = () => {
-              setExpandedSections((prev) => ({
-                ...prev,
-                [range]: !prev[range],
-              }));
-            };
-
-            return (
-              <div key={range} className="bg-white rounded-lg shadow-md border">
-                <div
-                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between"
-                  onClick={toggleExpanded}
-                >
-                  <div className="flex items-center space-x-3">
-                    <h2 className="text-lg font-bold">{getRangeName(range)}</h2>
-                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                      {people.length} personne{people.length > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div className="text-gray-400">
-                    {isExpanded ? (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 15l7-7 7 7"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="border-t border-gray-100">
-                    {people.length > 0 ? (
-                      <div className="p-4 space-y-2">
-                        {people.map((person) => (
-                          <div
-                            key={person.name}
-                            className="flex items-center justify-between py-2 border-b border-gray-50 last:border-b-0"
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
-                                {person.name.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="font-medium">{person.name}</span>
-                            </div>
-                            <span className="text-sm text-gray-500">
-                              {person.birthDate.toLocaleDateString("fr-FR", {
-                                day: "numeric",
-                                month: "long",
-                              })}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-gray-500">
-                        Aucun anniversaire dans cette période
-                      </div>
-                    )}
-                  </div>
-                )}
+          ) : connectionError ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center space-y-4">
+                <p>
+                  Une erreur est survenue lors de la récupération des données.
+                </p>
+                <Button onClick={() => window.location.reload()}>
+                  Réessayer
+                </Button>
               </div>
-            );
-          })
-        )}
-      </div>
-    </Container>
+            </div>
+          ) : (
+            rangeOrder.map((range) => {
+              const people =
+                peopleBirthdayByRange[
+                  range as keyof typeof peopleBirthdayByRange
+                ];
+              const isExpanded = expandedSections[range] || false;
+
+              const toggleExpanded = () => {
+                setExpandedSections((prev) => ({
+                  ...prev,
+                  [range]: !prev[range],
+                }));
+              };
+
+              return (
+                <div
+                  key={range}
+                  style={{
+                    background: "var(--surface)",
+                    borderRadius: "var(--radius)",
+                    boxShadow: "var(--shadow-sm)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div
+                    className="p-4 cursor-pointer hover:bg-muted/10 transition-colors flex items-center justify-between"
+                    onClick={toggleExpanded}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <h2 className="text-lg font-bold">
+                        {getRangeName(range)}
+                      </h2>
+                      <span
+                        className="text-sm text-muted px-2 py-1 rounded-full"
+                        style={{ background: "var(--bg-muted)" }}
+                      >
+                        {people.length} personne{people.length > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <div className="text-muted">
+                      {isExpanded ? (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 15l7-7 7 7"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div style={{ borderTop: "1px solid var(--border)" }}>
+                      {people.length > 0 ? (
+                        <div className="p-4 space-y-2">
+                          {people.map((person) => (
+                            <div
+                              key={person.name}
+                              className="flex items-center justify-between py-2 border-b last:border-b-0"
+                              style={{ borderColor: "var(--border)" }}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div
+                                  className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm"
+                                  style={{
+                                    background: "var(--brand)",
+                                    color: "var(--brand-contrast)",
+                                  }}
+                                >
+                                  {person.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="font-medium">
+                                  {person.name}
+                                </span>
+                              </div>
+                              <span className="text-sm text-muted">
+                                {person.birthDate.toLocaleDateString("fr-FR", {
+                                  day: "numeric",
+                                  month: "long",
+                                })}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center text-muted">
+                          Aucun anniversaire dans cette période
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </PageContent>
+
+      <PagePagination>
+        {/* No pagination needed for dashboard */}
+      </PagePagination>
+    </Page>
   );
 }
 

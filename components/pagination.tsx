@@ -23,20 +23,17 @@ export const Pagination = ({
         </div>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
-            {pageNumber > 1 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  goToPage(pageNumber - 1);
-                }}
-                disabled={pageNumber === 1}
-                className="cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Précédent
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                goToPage(pageNumber - 1);
+              }}
+              disabled={pageNumber === 1}
+              className="cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
 
             {/* Page numbers */}
             <div className="flex gap-1">
@@ -59,18 +56,15 @@ export const Pagination = ({
               })}
             </div>
 
-            {pageNumber < totalPages && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(pageNumber + 1)}
-                disabled={pageNumber === totalPages}
-                className="cursor-pointer"
-              >
-                Suivant
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPage(pageNumber + 1)}
+              disabled={pageNumber === totalPages}
+              className="cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         )}
       </div>

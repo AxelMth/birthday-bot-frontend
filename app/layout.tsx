@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { Header as LayoutHeader } from "@/components/layout/header";
 import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
+import "./theme.css";
 
 export const metadata: Metadata = {
   title: "Birthy",
@@ -27,12 +28,14 @@ html {
 }
         `}</style>
       </head>
-      <body>
+      <body className="app-shell">
         <AuthProvider>
-          <LayoutHeader />
-          <main className="min-h-screen bg-background">
-            <div className="max-w-6xl mx-auto">{children}</div>
-          </main>
+          <header className="app-header">
+            <div className="app-header__inner">
+              <LayoutHeader />
+            </div>
+          </header>
+          <main>{children}</main>
         </AuthProvider>
       </body>
     </html>

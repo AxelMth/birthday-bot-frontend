@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -23,10 +22,19 @@ import { Badge } from "@/components/ui/badge";
 import { peopleClient } from "@/lib/api-client";
 import Link from "next/link";
 import { Pagination } from "@/components/pagination";
-import { Header } from "@/components/header";
-import { Container } from "@/components/container";
 import { peopleClientService } from "@/lib/clients/people.client.service";
 import { useAuth } from "@/components/auth-context";
+import {
+  Page,
+  PageTitle,
+  PageActions,
+  PageContent,
+  PagePagination,
+} from "@/components/layout/page";
+import {
+  TableContainer,
+  StandardTable,
+} from "@/components/table/table-container";
 
 type Person = {
   id: number;
@@ -130,154 +138,135 @@ export default function DashboardPage() {
   };
 
   return (
-    <Container>
-      <div className="flex flex-col h-full overflow-hidden">
-        <Header
-          title="Tableau de bord"
-          description={`Gérez les anniversaires et notifications (${total} personnes)`}
-        />
-        {/* Sticky Header and Search */}
-        <div className="flex-shrink-0 bg-background border-b border-border">
-          <div className="max-w-7xl mx-auto p-4 space-y-4">
-            {/* Search and create button */}
-            <div className="flex gap-4 items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Rechercher par nom..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setCurrentPage(1); // Reset pagination to page 1 when searching
-                  }}
-                  className="pl-10"
-                />
-              </div>
-              {isAdmin && (
-                <Link href="/person/create">
-                  <Button
-                    size="default"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Créer une personne
-                  </Button>
-                </Link>
-              )}
+    <Page>
+      <PageTitle>
+        <h1 className="text-2xl font-bold">Tableau de bord</h1>
+      </PageTitle>
+
+      <PageActions>
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted w-4 h-4" />
+          <Input
+            placeholder="Rechercher par nom..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1); // Reset pagination to page 1 when searching
+            }}
+            className="pl-10 input"
+          />
+        </div>
+        {isAdmin && (
+          <Link href="/person/create">
+            <Button
+              size="default"
+              className="btn btn--primary cursor-pointer whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Créer une personne
+            </Button>
+          </Link>
+        )}
+      </PageActions>
+
+      <PageContent>
+        <TableContainer>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-4 overflow-hidden">
-          <div className="max-w-7xl mx-auto h-full flex flex-col">
-            {/* People Table */}
-            {loading ? (
-              <div className="flex justify-center items-center flex-1">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          ) : connectionError ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center space-y-4">
+                <div className="text-destructive">
+                  <h3 className="font-semibold">Erreur de connexion</h3>
+                  <p className="text-sm mt-1">
+                    Impossible de se connecter au serveur.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    fetchPeople();
+                  }}
+                  className="cursor-pointer"
+                >
+                  Réessayer
+                </Button>
               </div>
-            ) : connectionError ? (
-              <div className="flex justify-center items-center flex-1">
-                <div className="text-center space-y-4">
-                  <div className="text-destructive">
-                    <h3 className="font-semibold">Erreur de connexion</h3>
-                    <p className="text-sm mt-1">
-                      Impossible de se connecter au serveur.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      fetchPeople();
-                    }}
-                    className="cursor-pointer"
+            </div>
+          ) : people.length === 0 ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center text-muted">
+                {search
+                  ? "Aucune personne trouvée pour cette recherche."
+                  : "Aucune personne enregistrée."}
+              </div>
+            </div>
+          ) : (
+            <StandardTable>
+              <TableHeader>
+                <TableRow>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort("name")}
                   >
-                    Réessayer
-                  </Button>
-                </div>
-              </div>
-            ) : people.length === 0 ? (
-              <div className="flex justify-center items-center flex-1">
-                <div className="text-center text-muted-foreground">
-                  {search
-                    ? "Aucune personne trouvée pour cette recherche."
-                    : "Aucune personne enregistrée."}
-                </div>
-              </div>
-            ) : (
-              <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
-                <div className="flex-1 overflow-y-auto">
-                  <Table className="relative">
-                    <TableHeader className="sticky top-0 bg-background">
-                      <TableRow>
-                        <TableHead
-                          className="bg-background cursor-pointer hover:bg-muted/50 select-none"
-                          onClick={() => handleSort("name")}
-                        >
-                          Nom
-                          {getSortIcon("name")}
-                        </TableHead>
-                        <TableHead
-                          className="bg-background cursor-pointer hover:bg-muted/50 select-none"
-                          onClick={() => handleSort("birthDate")}
-                        >
-                          Date d&apos;anniversaire
-                          {getSortIcon("birthDate")}
-                        </TableHead>
-                        <TableHead className="bg-background">
-                          Application
-                        </TableHead>
-                        {isAdmin && (
-                          <TableHead className="text-right bg-background">
-                            Actions
-                          </TableHead>
-                        )}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {people.map((person) => (
-                        <TableRow key={person.id} className="hover:bg-muted/50">
-                          <TableCell className="font-medium">
-                            {person.name}
-                          </TableCell>
-                          <TableCell>{formatDate(person.birthDate)}</TableCell>
-                          <TableCell>
-                            {getApplicationBadge(person.application)}
-                          </TableCell>
-                          {isAdmin && (
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Link href={`/person/${person.id}/edit`}>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="cursor-pointer"
-                                  >
-                                    <Pencil className="w-4 h-4" />
-                                  </Button>
-                                </Link>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDelete(person.id)}
-                                  className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+                    Nom
+                    {getSortIcon("name")}
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort("birthDate")}
+                  >
+                    Date d&apos;anniversaire
+                    {getSortIcon("birthDate")}
+                  </TableHead>
+                  <TableHead>Application</TableHead>
+                  {isAdmin && (
+                    <TableHead className="text-right">Actions</TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {people.map((person) => (
+                  <TableRow key={person.id}>
+                    <TableCell className="font-medium">{person.name}</TableCell>
+                    <TableCell>{formatDate(person.birthDate)}</TableCell>
+                    <TableCell>
+                      {getApplicationBadge(person.application)}
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Link href={`/person/${person.id}/edit`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="cursor-pointer"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(person.id)}
+                            className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </StandardTable>
+          )}
+        </TableContainer>
+      </PageContent>
 
-        {/* Sticky Pagination */}
+      <PagePagination>
         {totalPages > 1 && (
           <Pagination
             pageNumber={currentPage}
@@ -289,7 +278,7 @@ export default function DashboardPage() {
             }}
           />
         )}
-      </div>
-    </Container>
+      </PagePagination>
+    </Page>
   );
 }
