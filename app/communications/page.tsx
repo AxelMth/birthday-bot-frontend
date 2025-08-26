@@ -1,6 +1,6 @@
 "use client";
 
-import { communicationClient } from "@/lib/api-client";
+import { communicationsClientService } from "@/lib/clients/communications.client.service";
 import { useEffect, useMemo, useState } from "react";
 import {
   Table,
@@ -39,33 +39,21 @@ export default function CommunicationsPage() {
 
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
-  // const [search, setSearch] = useState("");
 
   const fetchCommunications = async () => {
     setLoading(true);
     setConnectionError(false);
-    const response = await communicationClient.getPaginatedCommunications({
-      query: {
-        pageNumber: currentPage,
-        pageSize: pageSize,
-        // ...(search ? { search: search } : {}),
-      },
-    });
-    if (response.status === 200) {
-      setCommunications(
-        response.body?.communications?.map((communication) => ({
-          id: communication.id ?? 0,
-          personName: communication.personName ?? "",
-          applicationName: communication.applicationName ?? "",
-          message: communication.message ?? "",
-          sentAt: communication.sentAt ?? new Date(),
-        })) ?? [],
-      );
-      setLoading(false);
-    } else {
+    const { data, error } = await communicationsClientService.getCommunications(
+      currentPage,
+      pageSize,
+    );
+    if (data) {
+      setCommunications(data.communications);
+    } else if (error) {
       setConnectionError(true);
-      setLoading(false);
+      setCommunications([]);
     }
+    setLoading(false);
   };
 
   useEffect(() => {

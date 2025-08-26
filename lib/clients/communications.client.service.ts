@@ -10,11 +10,11 @@ export const communicationClient = initClient(communicationContract, {
 });
 
 type Communication = {
-  id: string;
+  id: number;
   personName: string;
   applicationName: string;
   message: string;
-  sentAt: string;
+  sentAt: Date;
 };
 
 type PaginatedCommunicationsResponse = {
@@ -37,11 +37,11 @@ export class CommunicationsClientService {
         data: {
           communications:
             response.body?.communications?.map((communication) => ({
-              id: communication.id?.toString() ?? "",
+              id: communication.id ?? 0,
               personName: communication.personName ?? "",
               applicationName: communication.applicationName ?? "",
               message: communication.message ?? "",
-              sentAt: communication.sentAt?.toISOString() ?? "",
+              sentAt: communication.sentAt ?? new Date(),
             })) ?? [],
           total: response.body?.count ?? 0,
         },
