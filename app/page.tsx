@@ -232,9 +232,20 @@ function getPeopleByBirthdayRange(people: Person[]): Record<Range, Person[]> {
 
   return Object.entries(peopleByRange).reduce(
     (acc, [range, people]) => {
-      acc[range as Range] = people.sort(
-        (a, b) => a.birthDate.getTime() - b.birthDate.getTime(),
-      );
+      const today = getTodayDate();
+      acc[range as Range] = people.sort((a, b) => {
+        const aDate = new Date(
+          today.getFullYear(),
+          a.birthDate.getMonth(),
+          a.birthDate.getDate(),
+        );
+        const bDate = new Date(
+          today.getFullYear(),
+          b.birthDate.getMonth(),
+          b.birthDate.getDate(),
+        );
+        return aDate.getTime() - bDate.getTime();
+      });
       return acc;
     },
     {} as Record<Range, Person[]>,
