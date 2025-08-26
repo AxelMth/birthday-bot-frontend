@@ -125,7 +125,7 @@ export default function CreatePersonPage() {
               : undefined,
         },
       });
-      router.push("/");
+      router.push("/people");
     } catch (error) {
       console.error("Failed to create person:", error);
       setErrors({ submit: "Erreur lors de la création de la personne" });
@@ -146,7 +146,7 @@ export default function CreatePersonPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/">
+        <Link href="/people">
           <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour

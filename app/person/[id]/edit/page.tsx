@@ -167,7 +167,7 @@ export default function EditPersonPage() {
       });
 
       if (response.status === 200) {
-        router.push("/");
+        router.push("/people");
       } else {
         setErrors({ submit: "Erreur lors de la mise à jour de la personne" });
       }
@@ -206,7 +206,7 @@ export default function EditPersonPage() {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Link href="/">
+          <Link href="/people">
             <Button variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Retour
@@ -237,7 +237,7 @@ export default function EditPersonPage() {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Link href="/">
+          <Link href="/people">
             <Button variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Retour
@@ -274,7 +274,7 @@ export default function EditPersonPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/">
+        <Link href="/people">
           <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour
@@ -399,7 +399,7 @@ export default function EditPersonPage() {
 
             {/* Submit Button */}
             <div className="flex justify-end gap-3 pt-4">
-              <Link href="/">
+              <Link href="/people">
                 <Button variant="outline" type="button">
                   Annuler
                 </Button>
