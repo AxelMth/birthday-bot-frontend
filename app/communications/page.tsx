@@ -74,18 +74,11 @@ export default function CommunicationsPage() {
 
   return (
     <Container>
+      <Header
+        title="Communications"
+        description={`Gérez les communications (${totalItems} communications)`}
+      />
       <div className="flex flex-col">
-        {/* Sticky Header and Search */}
-        <div className="flex-shrink-0 bg-background border-border">
-          <div className="max-w-7xl mx-auto p-4 space-y-4">
-            {/* Header */}
-            <Header
-              title="Communications"
-              description={`Gérez les communications (${totalItems} communications)`}
-            />
-          </div>
-        </div>
-
         {/* Main Content */}
         <div className="flex-1 p-4 overflow-hidden">
           <div className="max-w-7xl mx-auto flex flex-col">

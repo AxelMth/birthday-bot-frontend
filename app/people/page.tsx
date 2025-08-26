@@ -153,15 +153,13 @@ export default function DashboardPage() {
   return (
     <Container>
       <div className="flex flex-col">
+        <Header
+          title="Tableau de bord"
+          description={`Gérez les anniversaires et notifications (${total} personnes)`}
+        />
         {/* Sticky Header and Search */}
         <div className="flex-shrink-0 bg-background border-b border-border">
           <div className="max-w-7xl mx-auto p-4 space-y-4">
-            {/* Header */}
-            <Header
-              title="Tableau de bord"
-              description={`Gérez les anniversaires et notifications (${total} personnes)`}
-            />
-
             {/* Search and create button */}
             <div className="flex gap-4 items-center">
               <div className="relative flex-1">

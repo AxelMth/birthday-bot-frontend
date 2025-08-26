@@ -2,12 +2,12 @@ import type React from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Header as LayoutHeader } from "@/components/layout/header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Birthday Bot Admin",
-  description: "Admin panel for managing birthday notifications",
-  generator: "v0.app",
+  title: "Birthy",
+  description: "Birthy is a platform for managing birthday notifications",
 };
 
 export default function RootLayout({
@@ -27,6 +27,7 @@ html {
         `}</style>
       </head>
       <body>
+        <LayoutHeader />
         <main className="min-h-screen bg-background">
           <div className="max-w-6xl mx-auto">{children}</div>
         </main>

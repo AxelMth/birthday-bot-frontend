@@ -82,7 +82,6 @@ export default function HomePage() {
         },
       });
       if (response.status === 200) {
-        console.log(response.body?.people);
         setNextPeople(
           response.body?.people?.map((person) => ({
             name: person.name ?? "",
@@ -116,7 +115,8 @@ export default function HomePage() {
 
       <div className="space-y-4">
         {rangeOrder.map((range) => {
-          const people = peopleBirthdayByRange[range as keyof typeof peopleBirthdayByRange];
+          const people =
+            peopleBirthdayByRange[range as keyof typeof peopleBirthdayByRange];
           const isExpanded = expandedSections[range] || false;
 
           const toggleExpanded = () => {
