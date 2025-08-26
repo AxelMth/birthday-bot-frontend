@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Search,
   Plus,
   Pencil,
   Trash2,
@@ -144,18 +143,15 @@ export default function DashboardPage() {
       </PageTitle>
 
       <PageActions>
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted w-4 h-4" />
           <Input
-            placeholder="Rechercher par nom..."
+            placeholder="🔍 Rechercher par nom..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setCurrentPage(1); // Reset pagination to page 1 when searching
             }}
-            className="pl-10 input"
+            className="input"
           />
-        </div>
         {isAdmin && (
           <Link href="/person/create">
             <Button
