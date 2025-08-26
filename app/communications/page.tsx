@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
+import { ApplicationBadge } from "@/components/application-badge";
 import {
   Page,
   PageTitle,
@@ -123,7 +124,9 @@ export default function CommunicationsPage() {
                 {communications.map((communication) => (
                   <TableRow key={communication.id}>
                     <TableCell>{communication.personName}</TableCell>
-                    <TableCell>{communication.applicationName}</TableCell>
+                    <TableCell>
+                      <ApplicationBadge application={communication.applicationName} />
+                    </TableCell>
                     <TableCell>{communication.message}</TableCell>
                     <TableCell>
                       {communication.sentAt.toLocaleDateString()}

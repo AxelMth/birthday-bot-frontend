@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { ApplicationBadge } from "@/components/application-badge";
 import { peopleClient } from "@/lib/api-client";
 import Link from "next/link";
 import { Pagination } from "@/components/pagination";
@@ -125,17 +125,6 @@ export default function DashboardPage() {
     return "N/A";
   };
 
-  const getApplicationBadge = (application: string) => {
-    switch (application.toLowerCase()) {
-      case "slack":
-        return <Badge variant="secondary">Slack</Badge>;
-      case "none":
-        return <Badge variant="outline">Aucune application</Badge>;
-      default:
-        return <Badge variant="outline">{application}</Badge>;
-    }
-  };
-
   return (
     <Page>
       <PageTitle>
@@ -229,7 +218,7 @@ export default function DashboardPage() {
                     <TableCell className="font-medium">{person.name}</TableCell>
                     <TableCell>{formatDate(person.birthDate)}</TableCell>
                     <TableCell>
-                      {getApplicationBadge(person.application)}
+                      <ApplicationBadge application={person.application} />
                     </TableCell>
                     {isAdmin && (
                       <TableCell className="text-right">
