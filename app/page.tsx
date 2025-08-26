@@ -1,309 +1,211 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Search,
-  Plus,
-  Pencil,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { peopleClient } from "@/lib/api-client";
-import Link from "next/link";
-import { Pagination } from "@/components/pagination";
+import { useEffect, useMemo, useState } from "react";
+
 import { Header } from "@/components/header";
+import { birthdayClient } from "@/lib/api-client";
+import { Container } from "@/components/container";
 
 type Person = {
-  id: number;
   name: string;
   birthDate: Date;
-  application: string;
-  applicationMetadata: Record<string, string | number | boolean>;
 };
 
-export default function DashboardPage() {
-  const [people, setPeople] = useState<Person[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [connectionError, setConnectionError] = useState(false);
-  const [sortBy, setSortBy] = useState<"name" | "birthDate" | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const pageSize = 50;
+export default function HomePage() {
+  const [nextPeople, setNextPeople] = useState<Person[]>([]);
 
-  const fetchPeople = async (
-    page: number,
-    searchTerm?: string,
-    sortField?: "name" | "birthDate" | null,
-    sortDirection?: "asc" | "desc",
-  ) => {
-    try {
-      setLoading(true);
-      setConnectionError(false);
-      const response = await peopleClient.getPaginatedPeople({
+  const peopleBirthdayByRange = useMemo(() => {
+    const today = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      new Date().getDate(),
+    );
+    const nextWeek = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 7,
+    );
+    const nextDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1,
+    );
+
+    const peopleByRange = nextPeople.reduce(
+      (acc, person) => {
+        const birthDateWithCurrentYear = new Date(
+          new Date().getFullYear(),
+          person.birthDate.getMonth(),
+          person.birthDate.getDate(),
+        );
+        if (birthDateWithCurrentYear === today) {
+          acc.today.push(person);
+        } else if (birthDateWithCurrentYear === nextDay) {
+          acc.nextDay.push(person);
+        } else if (birthDateWithCurrentYear < nextWeek) {
+          acc.nextWeek.push(person);
+        } else {
+          acc.nextMonth.push(person);
+        }
+        return acc;
+      },
+      { nextMonth: [], nextWeek: [], nextDay: [], today: [] } as {
+        nextMonth: Person[];
+        nextWeek: Person[];
+        nextDay: Person[];
+        today: Person[];
+      },
+    );
+
+    return peopleByRange;
+  }, [nextPeople]);
+
+  // Add this state at the component level (where other useState calls are)
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >(() => {
+    // Initialize with today and nextDay expanded
+    const initial: Record<string, boolean> = {};
+    Object.keys(peopleBirthdayByRange).forEach((range) => {
+      initial[range] = range === "today" || range === "nextDay";
+    });
+    return initial;
+  });
+
+  useEffect(() => {
+    const fetchNextBirthdays = async () => {
+      const response = await birthdayClient.getNextBirthdays({
         query: {
-          pageNumber: page,
-          pageSize: pageSize,
-          ...(searchTerm ? { search: searchTerm } : {}),
-          ...(sortField ? { sortBy: sortField } : {}),
-          ...(sortField ? { sortOrder: sortDirection } : {}),
+          date: new Date(new Date().setMonth(new Date().getMonth() + 1))
+            .toISOString()
+            .split("T")[0],
         },
       });
       if (response.status === 200) {
-        setPeople(
-          response.body.people?.map((person) => ({
-            id: person.id ?? 0,
+        console.log(response.body?.people);
+        setNextPeople(
+          response.body?.people?.map((person) => ({
             name: person.name ?? "",
-            birthDate: person.birthDate ?? null,
-            application: person.application ?? "",
-            applicationMetadata: person.applicationMetadata ?? {},
-          })) as Person[],
+            birthDate: new Date(person.birthDate ?? ""),
+          })) ?? [],
         );
-        setTotalPages(Math.ceil((response.body.count ?? 0) / pageSize));
-        setTotal(response.body.count ?? 0);
-        setCurrentPage(page);
-      } else {
-        setConnectionError(true);
-        setPeople([]);
-        setTotal(0);
-        setTotalPages(1);
       }
-    } catch (error) {
-      console.error("Failed to fetch people:", error);
-      setConnectionError(true);
-      setPeople([]);
-      setTotal(0);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
+    };
+    fetchNextBirthdays();
+  }, []);
+
+  const getRangeName = (range: string) => {
+    if (range === "today") {
+      return "Aujourd'hui";
+    } else if (range === "nextDay") {
+      return "Demain";
+    }
+    if (range === "nextWeek") {
+      return "La semaine prochaine";
+    }
+    if (range === "nextMonth") {
+      return "Le mois prochain";
     }
   };
 
-  useEffect(() => {
-    fetchPeople(currentPage, search, sortBy, sortOrder);
-  }, [currentPage, search, sortBy, sortOrder]);
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette personne ?")) {
-      return;
-    }
-
-    const response = await peopleClient.deletePersonById({ params: { id } });
-    if (response.status === 200) {
-      fetchPeople(currentPage, search);
-    } else {
-      console.error("Failed to delete person:", response.status);
-    }
-  };
-
-  const handleSort = (field: "name" | "birthDate") => {
-    if (sortBy === field) {
-      // Toggle sort order if same field
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      // Set new field and default to ascending
-      setSortBy(field);
-      setSortOrder("asc");
-    }
-    setCurrentPage(1); // Reset to first page when sorting
-  };
-
-  const getSortIcon = (field: "name" | "birthDate") => {
-    if (sortBy !== field) return null;
-    return sortOrder === "asc" ? (
-      <ChevronUp className="w-4 h-4 inline ml-1" />
-    ) : (
-      <ChevronDown className="w-4 h-4 inline ml-1" />
-    );
-  };
-
-  const formatDate = (date: Date) => {
-    if (date) {
-      return new Date(date).toLocaleDateString("fr-FR");
-    }
-    return "N/A";
-  };
-
-  const getApplicationBadge = (application: string) => {
-    switch (application.toLowerCase()) {
-      case "slack":
-        return <Badge variant="secondary">Slack</Badge>;
-      case "none":
-        return <Badge variant="outline">Aucune application</Badge>;
-      default:
-        return <Badge variant="outline">{application}</Badge>;
-    }
-  };
+  const rangeOrder = ["today", "nextDay", "nextWeek", "nextMonth"];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Sticky Header and Search */}
-      <div className="flex-shrink-0 bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto p-4 space-y-4">
-          {/* Header */}
-          <Header
-            title="Tableau de bord"
-            description={`Gérez les anniversaires et notifications (${total} personnes)`}
-          />
+    <Container>
+      <Header title="Accueil" description="Bienvenue sur le tableau de bord" />
 
-          {/* Search and create button */}
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Rechercher par nom..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1); // Reset pagination to page 1 when searching
-                }}
-                className="pl-10"
-              />
-            </div>
-            <Link href="/person/create">
-              <Button
-                size="default"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap"
+      <div className="space-y-4">
+        {rangeOrder.map((range) => {
+          const people = peopleBirthdayByRange[range as keyof typeof peopleBirthdayByRange];
+          const isExpanded = expandedSections[range] || false;
+
+          const toggleExpanded = () => {
+            setExpandedSections((prev) => ({
+              ...prev,
+              [range]: !prev[range],
+            }));
+          };
+
+          return (
+            <div key={range} className="bg-white rounded-lg shadow-md border">
+              <div
+                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between"
+                onClick={toggleExpanded}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Créer une personne
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-4 overflow-hidden">
-        <div className="max-w-7xl mx-auto h-full flex flex-col">
-          {/* People Table */}
-          {loading ? (
-            <div className="flex justify-center items-center flex-1">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : connectionError ? (
-            <div className="flex justify-center items-center flex-1">
-              <div className="text-center space-y-4">
-                <div className="text-destructive">
-                  <h3 className="font-semibold">Erreur de connexion</h3>
-                  <p className="text-sm mt-1">
-                    Impossible de se connecter au serveur.
-                  </p>
+                <div className="flex items-center space-x-3">
+                  <h2 className="text-lg font-bold">{getRangeName(range)}</h2>
+                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    {people.length} personne{people.length > 1 ? "s" : ""}
+                  </span>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    fetchPeople(currentPage, search);
-                  }}
-                  className="cursor-pointer"
-                >
-                  Réessayer
-                </Button>
+                <div className="text-gray-400">
+                  {isExpanded ? (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 15l7-7 7 7"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  )}
+                </div>
               </div>
-            </div>
-          ) : people.length === 0 ? (
-            <div className="flex justify-center items-center flex-1">
-              <div className="text-center text-muted-foreground">
-                {search
-                  ? "Aucune personne trouvée pour cette recherche."
-                  : "Aucune personne enregistrée."}
-              </div>
-            </div>
-          ) : (
-            <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
-              <div className="flex-1 overflow-y-auto">
-                <Table className="relative">
-                  <TableHeader className="sticky top-0 bg-background">
-                    <TableRow>
-                      <TableHead
-                        className="bg-background cursor-pointer hover:bg-muted/50 select-none"
-                        onClick={() => handleSort("name")}
-                      >
-                        Nom
-                        {getSortIcon("name")}
-                      </TableHead>
-                      <TableHead
-                        className="bg-background cursor-pointer hover:bg-muted/50 select-none"
-                        onClick={() => handleSort("birthDate")}
-                      >
-                        Date d&apos;anniversaire
-                        {getSortIcon("birthDate")}
-                      </TableHead>
-                      <TableHead className="bg-background">
-                        Application
-                      </TableHead>
-                      <TableHead className="text-right bg-background">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {people.map((person) => (
-                      <TableRow key={person.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">
-                          {person.name}
-                        </TableCell>
-                        <TableCell>{formatDate(person.birthDate)}</TableCell>
-                        <TableCell>
-                          {getApplicationBadge(person.application)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Link href={`/person/${person.id}/edit`}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="cursor-pointer"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(person.id)}
-                              className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Sticky Pagination */}
-      {totalPages > 1 && (
-        <Pagination
-          pageNumber={currentPage}
-          pageSize={pageSize}
-          totalItems={total}
-          goToPage={(page) => {
-            setCurrentPage(page);
-            fetchPeople(page, search, sortBy, sortOrder);
-          }}
-        />
-      )}
-    </div>
+              {isExpanded && (
+                <div className="border-t border-gray-100">
+                  {people.length > 0 ? (
+                    <div className="p-4 space-y-2">
+                      {people.map((person) => (
+                        <div
+                          key={person.name}
+                          className="flex items-center justify-between py-2 border-b border-gray-50 last:border-b-0"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
+                              {person.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-medium">{person.name}</span>
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {person.birthDate.toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "long",
+                            })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      Aucun anniversaire dans cette période
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Container>
   );
 }

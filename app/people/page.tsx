@@ -1,0 +1,312 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Search,
+  Plus,
+  Pencil,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { peopleClient } from "@/lib/api-client";
+import Link from "next/link";
+import { Pagination } from "@/components/pagination";
+import { Header } from "@/components/header";
+import { Container } from "@/components/container";
+
+type Person = {
+  id: number;
+  name: string;
+  birthDate: Date;
+  application: string;
+  applicationMetadata: Record<string, string | number | boolean>;
+};
+
+export default function DashboardPage() {
+  const [people, setPeople] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [connectionError, setConnectionError] = useState(false);
+  const [sortBy, setSortBy] = useState<"name" | "birthDate" | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const pageSize = 50;
+
+  const fetchPeople = async (
+    page: number,
+    searchTerm?: string,
+    sortField?: "name" | "birthDate" | null,
+    sortDirection?: "asc" | "desc",
+  ) => {
+    try {
+      setLoading(true);
+      setConnectionError(false);
+      const response = await peopleClient.getPaginatedPeople({
+        query: {
+          pageNumber: page,
+          pageSize: pageSize,
+          ...(searchTerm ? { search: searchTerm } : {}),
+          ...(sortField ? { sortBy: sortField } : {}),
+          ...(sortField ? { sortOrder: sortDirection } : {}),
+        },
+      });
+      if (response.status === 200) {
+        setPeople(
+          response.body.people?.map((person) => ({
+            id: person.id ?? 0,
+            name: person.name ?? "",
+            birthDate: person.birthDate ?? null,
+            application: person.application ?? "",
+            applicationMetadata: person.applicationMetadata ?? {},
+          })) as Person[],
+        );
+        setTotalPages(Math.ceil((response.body.count ?? 0) / pageSize));
+        setTotal(response.body.count ?? 0);
+        setCurrentPage(page);
+      } else {
+        setConnectionError(true);
+        setPeople([]);
+        setTotal(0);
+        setTotalPages(1);
+      }
+    } catch (error) {
+      console.error("Failed to fetch people:", error);
+      setConnectionError(true);
+      setPeople([]);
+      setTotal(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPeople(currentPage, search, sortBy, sortOrder);
+  }, [currentPage, search, sortBy, sortOrder]);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette personne ?")) {
+      return;
+    }
+
+    const response = await peopleClient.deletePersonById({ params: { id } });
+    if (response.status === 200) {
+      fetchPeople(currentPage, search);
+    } else {
+      console.error("Failed to delete person:", response.status);
+    }
+  };
+
+  const handleSort = (field: "name" | "birthDate") => {
+    if (sortBy === field) {
+      // Toggle sort order if same field
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      // Set new field and default to ascending
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  const getSortIcon = (field: "name" | "birthDate") => {
+    if (sortBy !== field) return null;
+    return sortOrder === "asc" ? (
+      <ChevronUp className="w-4 h-4 inline ml-1" />
+    ) : (
+      <ChevronDown className="w-4 h-4 inline ml-1" />
+    );
+  };
+
+  const formatDate = (date: Date) => {
+    if (date) {
+      return new Date(date).toLocaleDateString("fr-FR");
+    }
+    return "N/A";
+  };
+
+  const getApplicationBadge = (application: string) => {
+    switch (application.toLowerCase()) {
+      case "slack":
+        return <Badge variant="secondary">Slack</Badge>;
+      case "none":
+        return <Badge variant="outline">Aucune application</Badge>;
+      default:
+        return <Badge variant="outline">{application}</Badge>;
+    }
+  };
+
+  return (
+    <Container>
+      <div className="flex flex-col">
+        {/* Sticky Header and Search */}
+        <div className="flex-shrink-0 bg-background border-b border-border">
+          <div className="max-w-7xl mx-auto p-4 space-y-4">
+            {/* Header */}
+            <Header
+              title="Tableau de bord"
+              description={`Gérez les anniversaires et notifications (${total} personnes)`}
+            />
+
+            {/* Search and create button */}
+            <div className="flex gap-4 items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Rechercher par nom..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1); // Reset pagination to page 1 when searching
+                  }}
+                  className="pl-10"
+                />
+              </div>
+              <Link href="/person/create">
+                <Button
+                  size="default"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Créer une personne
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-4 overflow-hidden">
+          <div className="max-w-7xl mx-auto h-full flex flex-col">
+            {/* People Table */}
+            {loading ? (
+              <div className="flex justify-center items-center flex-1">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : connectionError ? (
+              <div className="flex justify-center items-center flex-1">
+                <div className="text-center space-y-4">
+                  <div className="text-destructive">
+                    <h3 className="font-semibold">Erreur de connexion</h3>
+                    <p className="text-sm mt-1">
+                      Impossible de se connecter au serveur.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      fetchPeople(currentPage, search);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    Réessayer
+                  </Button>
+                </div>
+              </div>
+            ) : people.length === 0 ? (
+              <div className="flex justify-center items-center flex-1">
+                <div className="text-center text-muted-foreground">
+                  {search
+                    ? "Aucune personne trouvée pour cette recherche."
+                    : "Aucune personne enregistrée."}
+                </div>
+              </div>
+            ) : (
+              <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
+                <div className="flex-1 overflow-y-auto">
+                  <Table className="relative">
+                    <TableHeader className="sticky top-0 bg-background">
+                      <TableRow>
+                        <TableHead
+                          className="bg-background cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("name")}
+                        >
+                          Nom
+                          {getSortIcon("name")}
+                        </TableHead>
+                        <TableHead
+                          className="bg-background cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("birthDate")}
+                        >
+                          Date d&apos;anniversaire
+                          {getSortIcon("birthDate")}
+                        </TableHead>
+                        <TableHead className="bg-background">
+                          Application
+                        </TableHead>
+                        <TableHead className="text-right bg-background">
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {people.map((person) => (
+                        <TableRow key={person.id} className="hover:bg-muted/50">
+                          <TableCell className="font-medium">
+                            {person.name}
+                          </TableCell>
+                          <TableCell>{formatDate(person.birthDate)}</TableCell>
+                          <TableCell>
+                            {getApplicationBadge(person.application)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Link href={`/person/${person.id}/edit`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="cursor-pointer"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(person.id)}
+                                className="text-destructive hover:text-destructive-foreground hover:bg-destructive cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sticky Pagination */}
+        {totalPages > 1 && (
+          <Pagination
+            pageNumber={currentPage}
+            pageSize={pageSize}
+            totalItems={total}
+            goToPage={(page) => {
+              setCurrentPage(page);
+              fetchPeople(page, search, sortBy, sortOrder);
+            }}
+          />
+        )}
+      </div>
+    </Container>
+  );
+}

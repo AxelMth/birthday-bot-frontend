@@ -3,6 +3,7 @@ import {
   peopleContract,
   contractMethodsContract,
   communicationContract,
+  birthdayContract,
 } from "birthday-bot-contracts";
 
 const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
@@ -19,6 +20,12 @@ export const contactMethodsClient = initClient(contractMethodsContract, {
 });
 
 export const communicationClient = initClient(communicationContract, {
+  baseUrl,
+  jsonQuery: true,
+  validateResponse: true,
+});
+
+export const birthdayClient = initClient(birthdayContract, {
   baseUrl,
   jsonQuery: true,
   validateResponse: true,
