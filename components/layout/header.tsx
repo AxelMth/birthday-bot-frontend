@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -20,31 +20,29 @@ export function Header() {
 
   return (
     <>
-      <div className="app-header__brand">Birthy</div>
+      <div className="app-header__brand">
+        <Link href="/">Birthy</Link>
+      </div>
+
       <nav className="app-header__nav">
-        <Link
-          href="/"
-          className="app-header__link"
-          aria-current={isActive("/") ? "page" : undefined}
-        >
-          Accueil
-        </Link>
         <Link
           href="/people"
           className="app-header__link"
           aria-current={isActive("/people") ? "page" : undefined}
         >
-          People
+          Contacts
         </Link>
         <Link
           href="/communications"
           className="app-header__link"
           aria-current={isActive("/communications") ? "page" : undefined}
         >
-          Communications
+          Messages
         </Link>
+      </nav>
 
-        <ThemeSwitcher />
+      <div className="app-header__actions">
+        <ThemeToggle />
 
         {/* Admin status indicator */}
         {validating && (
@@ -74,7 +72,7 @@ export function Header() {
             </Button>
           </div>
         )}
-      </nav>
+      </div>
     </>
   );
 }

@@ -16,7 +16,7 @@ export const Pagination = ({
 }: PaginationProps) => {
   const totalPages = Math.ceil(totalItems / pageSize);
   return (
-    <div 
+    <div
       className="flex-shrink-0 p-4"
       style={{
         background: "var(--surface)",
@@ -24,10 +24,7 @@ export const Pagination = ({
       }}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div 
-          className="text-sm"
-          style={{ color: "var(--muted)" }}
-        >
+        <div className="text-sm" style={{ color: "var(--muted)" }}>
           Page {pageNumber} sur {totalPages} ({totalItems} résultats)
         </div>
         {totalPages > 1 && (

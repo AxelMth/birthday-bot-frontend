@@ -128,13 +128,13 @@
 
 .app-header__brand {
   font-weight: 700;
+  font-size: 24px;
 }
 
 .app-header__nav {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-left: auto;
 }
 
 .app-header__link {
@@ -155,6 +155,13 @@
 .app-header__link[aria-current="page"] {
   background: var(--brand);
   color: var(--brand-contrast);
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
 }
 
 /* unified content container */
