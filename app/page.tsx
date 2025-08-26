@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/header";
 import { birthdayClient } from "@/lib/api-client";
 import { Container } from "@/components/container";
+import { getNextDayDate, getNextWeekDate, getTodayDate } from "@/lib/date";
 
 type Person = {
   name: string;
@@ -15,21 +16,9 @@ export default function HomePage() {
   const [nextPeople, setNextPeople] = useState<Person[]>([]);
 
   const peopleBirthdayByRange = useMemo(() => {
-    const today = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      new Date().getDate(),
-    );
-    const nextWeek = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() + 7,
-    );
-    const nextDay = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() + 1,
-    );
+    const today = getTodayDate();
+    const nextDay = getNextDayDate();
+    const nextWeek = getNextWeekDate();
 
     const peopleByRange = nextPeople.reduce(
       (acc, person) => {
