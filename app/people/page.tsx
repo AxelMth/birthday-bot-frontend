@@ -54,8 +54,7 @@ export default function DashboardPage() {
     return Math.ceil(total / pageSize);
   }, [total, pageSize]);
 
-  const fetchPeople = useCallback(async (
-  ) => {
+  const fetchPeople = useCallback(async () => {
     const { data, error } = await peopleClientService.getPaginatedPeople(
       currentPage,
       pageSize,
