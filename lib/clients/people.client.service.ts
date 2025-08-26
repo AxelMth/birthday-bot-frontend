@@ -48,7 +48,7 @@ export class PeopleClientService {
             response.body?.people?.map((person) => ({
               id: person.id ?? 0,
               name: person.name ?? "",
-              birthDate: person.birthDate ?? new Date(),
+              birthDate: person.birthDate ?? null,
               application: person.application ?? "",
               applicationMetadata: person.applicationMetadata ?? {},
             })) ?? [],
