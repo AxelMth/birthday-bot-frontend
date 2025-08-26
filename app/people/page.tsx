@@ -137,7 +137,7 @@ export default function DashboardPage() {
 
   return (
     <Container>
-      <div className="flex flex-col">
+      <div className="flex flex-col h-full overflow-hidden">
         <Header
           title="Tableau de bord"
           description={`Gérez les anniversaires et notifications (${total} personnes)`}
