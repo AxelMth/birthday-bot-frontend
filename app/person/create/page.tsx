@@ -18,7 +18,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { peopleClient } from "@/lib/api-client";
-import type { CreatePersonRequest } from "@/lib/types";
 import Link from "next/link";
 
 export default function CreatePersonPage() {
@@ -83,7 +82,7 @@ export default function CreatePersonPage() {
           name: formData.name.trim(),
           birthDate: new Date(formData.birthDate),
           application: formData.application,
-          metadata:
+          applicationMetadata:
             Object.keys(metadata).length > 0
               ? (metadata as Record<string, string | number | boolean>)
               : undefined,
@@ -121,7 +120,7 @@ export default function CreatePersonPage() {
             Créer une personne
           </h1>
           <p className="text-muted-foreground mt-1">
-            Ajouter une nouvelle personne pour les notifications d'anniversaire
+            Ajouter une nouvelle personne pour les notifications d&apos;anniversaire
           </p>
         </div>
       </div>
@@ -151,7 +150,7 @@ export default function CreatePersonPage() {
 
             {/* Birthdate Field */}
             <div className="space-y-2">
-              <Label htmlFor="birthDate">Date d'anniversaire *</Label>
+              <Label htmlFor="birthDate">Date d&apos;anniversaire *</Label>
               <Input
                 id="birthDate"
                 type="date"
@@ -215,12 +214,12 @@ export default function CreatePersonPage() {
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      L'ID du canal Slack où envoyer les notifications
+                      L&apos;ID du canal Slack où envoyer les notifications
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="userId">ID de l'utilisateur *</Label>
+                    <Label htmlFor="userId">ID de l&apos;utilisateur *</Label>
                     <Input
                       id="userId"
                       type="text"
@@ -237,7 +236,7 @@ export default function CreatePersonPage() {
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      L'ID de l'utilisateur Slack à mentionner
+                      L&apos;ID de l&apos;utilisateur Slack à mentionner
                     </p>
                   </div>
                 </div>
