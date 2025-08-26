@@ -18,7 +18,7 @@ export const birthdayClient = initClient(birthdayContract, {
   validateResponse: true,
 });
 
-export class BirthdaysClient {
+export class BirthdaysClientService {
   constructor(private readonly client: typeof birthdayClient) {}
 
   async getNextBirthdays(
@@ -55,3 +55,5 @@ export class BirthdaysClient {
     };
   }
 }
+
+export const birthdaysClientService = new BirthdaysClientService(birthdayClient);

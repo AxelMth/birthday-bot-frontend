@@ -22,7 +22,7 @@ type PaginatedPeopleResponse = {
   count: number;
 };
 
-export class PeopleClient {
+export class PeopleClientService {
   constructor(private readonly client: typeof peopleClient) {}
 
   async getPaginatedPeople(
@@ -155,3 +155,5 @@ export class PeopleClient {
     };
   }
 }
+
+export const peopleClientService = new PeopleClientService(peopleClient);

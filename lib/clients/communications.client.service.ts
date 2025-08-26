@@ -22,7 +22,7 @@ type PaginatedCommunicationsResponse = {
   total: number;
 };
 
-export class CommunicationsClient {
+export class CommunicationsClientService {
   constructor(private readonly client: typeof communicationClient) {}
 
   async getCommunications(
@@ -66,3 +66,6 @@ export class CommunicationsClient {
     };
   }
 }
+
+
+export const communicationsClientService = new CommunicationsClientService(communicationClient);
