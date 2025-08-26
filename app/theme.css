@@ -207,10 +207,8 @@
 
 /* pagination stays visible (page does not scroll) */
 .page__pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   min-height: 48px;
+  width: 100%;
 }
 
 /* table standardization */
