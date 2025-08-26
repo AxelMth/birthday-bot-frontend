@@ -11,7 +11,6 @@ export const getNextDayDate = () => {
   return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 };
 
-
 export const getNextWeekDate = () => {
   const today = getTodayDate();
   return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
