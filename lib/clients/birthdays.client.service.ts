@@ -11,7 +11,7 @@ type NextBirthdaysResponse = {
   people: Person[];
 };
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
 export const birthdayClient = initClient(birthdayContract, {
   baseUrl,
   jsonQuery: true,

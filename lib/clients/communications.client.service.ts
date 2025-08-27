@@ -2,7 +2,7 @@ import { communicationContract } from "birthday-bot-contracts";
 import { initClient } from "@ts-rest/core";
 import { Response } from "./response.type";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
 export const communicationClient = initClient(communicationContract, {
   baseUrl,
   jsonQuery: true,
