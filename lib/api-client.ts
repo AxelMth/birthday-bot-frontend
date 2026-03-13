@@ -4,29 +4,28 @@ import {
   contractMethodsContract,
   communicationContract,
   birthdayContract,
+  groupContract,
+  connectorContract,
 } from "birthday-bot-contracts";
 
 const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
 
-// Helper function to get API key from localStorage
-const getApiKey = (): string | null => {
+const getToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("apiKey");
+  return localStorage.getItem("token");
 };
 
-// Helper function to create headers with API key
 const createHeaders = () => {
-  const apiKey = getApiKey();
+  const token = getToken();
   const headers: Record<string, string> = {};
 
-  if (apiKey) {
-    headers["x-api-key"] = apiKey;
+  if (token) {
+    headers["authorization"] = `Bearer ${token}`;
   }
 
   return headers;
 };
 
-// Common client configuration with API key headers
 const clientConfig = {
   baseUrl,
   jsonQuery: true,
@@ -47,3 +46,7 @@ export const communicationClient = initClient(
 );
 
 export const birthdayClient = initClient(birthdayContract, clientConfig);
+
+export const groupClient = initClient(groupContract, clientConfig);
+
+export const connectorClient = initClient(connectorContract, clientConfig);

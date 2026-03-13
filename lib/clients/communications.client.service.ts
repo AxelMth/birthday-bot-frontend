@@ -1,13 +1,5 @@
-import { communicationContract } from "birthday-bot-contracts";
-import { initClient } from "@ts-rest/core";
+import { communicationClient } from "@/lib/api-client";
 import { Response } from "./response.type";
-
-const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
-export const communicationClient = initClient(communicationContract, {
-  baseUrl,
-  jsonQuery: true,
-  validateResponse: true,
-});
 
 type Communication = {
   id: number;
@@ -50,18 +42,12 @@ export class CommunicationsClientService {
     }
     if (response.status === 500) {
       return {
-        data: {
-          communications: [],
-          total: 0,
-        },
+        data: { communications: [], total: 0 },
         error: response.body?.error ?? "Failed to get communications",
       };
     }
     return {
-      data: {
-        communications: [],
-        total: 0,
-      },
+      data: { communications: [], total: 0 },
       error: "Unknown error",
     };
   }

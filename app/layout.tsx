@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Header as LayoutHeader } from "@/components/layout/header";
 import { AuthProvider } from "@/components/auth-provider";
+import { AuthGuard } from "@/components/auth-guard";
 import "./globals.css";
 import "./theme.css";
 
@@ -35,7 +36,9 @@ html {
               <LayoutHeader />
             </div>
           </header>
-          <main>{children}</main>
+          <main>
+            <AuthGuard>{children}</AuthGuard>
+          </main>
         </AuthProvider>
       </body>
     </html>

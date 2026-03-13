@@ -1,5 +1,4 @@
-import { birthdayContract } from "birthday-bot-contracts";
-import { initClient } from "@ts-rest/core";
+import { birthdayClient } from "@/lib/api-client";
 import { Response } from "./response.type";
 
 type Person = {
@@ -10,13 +9,6 @@ type Person = {
 type NextBirthdaysResponse = {
   people: Person[];
 };
-
-const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!;
-export const birthdayClient = initClient(birthdayContract, {
-  baseUrl,
-  jsonQuery: true,
-  validateResponse: true,
-});
 
 export class BirthdaysClientService {
   constructor(private readonly client: typeof birthdayClient) {}
@@ -41,16 +33,12 @@ export class BirthdaysClientService {
     }
     if (response.status === 500) {
       return {
-        data: {
-          people: [],
-        },
+        data: { people: [] },
         error: response.body?.error ?? "Failed to get next birthdays",
       };
     }
     return {
-      data: {
-        people: [],
-      },
+      data: { people: [] },
       error: "Unknown error",
     };
   }

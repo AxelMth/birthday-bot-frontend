@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Save } from "lucide-react";
@@ -15,16 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { contactMethodsClient, peopleClient } from "@/lib/api-client";
+import { Separator } from "@/components/ui/separator";
+import { contactMethodsClient, peopleClient, groupClient } from "@/lib/api-client";
 import Link from "next/link";
-import { useAuth } from "@/components/auth-context";
 
 type PersonFormData = {
   name: string | undefined;
   birthDate: string | undefined;
   applicationName: string | undefined;
   applicationMetadata: Record<string, string> | undefined;
+  groupId: string;
 };
 
 type ContactMethod = {
@@ -33,15 +32,17 @@ type ContactMethod = {
   applicationMetadata: Record<string, string>;
 };
 
+type Group = { id: number; name: string };
+
 export default function EditPersonPage() {
   const router = useRouter();
   const params = useParams();
-  const { isAdmin } = useAuth();
   const personId = Number.parseInt(params.id as string);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [personName, setPersonName] = useState<string | null>(null);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [contactMethods, setContactMethods] = useState<ContactMethod[] | null>(
     null,
   );
@@ -50,19 +51,22 @@ export default function EditPersonPage() {
     birthDate: undefined,
     applicationName: undefined,
     applicationMetadata: undefined,
+    groupId: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Fetch person data on component mount
   useEffect(() => {
-    const fetchPerson = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const personData = await peopleClient.getPersonById({
-          params: {
-            id: personId,
-          },
-        });
+
+        const [personData, contactMethodsResponse, groupsResponse] =
+          await Promise.all([
+            peopleClient.getPersonById({ params: { id: personId } }),
+            contactMethodsClient.getContactMethods(),
+            groupClient.getGroups(),
+          ]);
+
         if (personData.status === 200) {
           const person = personData.body;
           setPersonName(person.name ?? "");
@@ -74,78 +78,59 @@ export default function EditPersonPage() {
               string,
               string
             >,
+            groupId: person.groupId ? String(person.groupId) : "",
           });
         } else {
           setErrors({ fetch: "Erreur lors du chargement des données" });
+        }
+
+        if (contactMethodsResponse.status === 200) {
+          setContactMethods(
+            (contactMethodsResponse.body.contactMethods ?? []).map((cm) => ({
+              id: cm.id ?? 0,
+              applicationName: cm.applicationName ?? "",
+              applicationMetadata: cm.applicationMetadata as Record<
+                string,
+                string
+              >,
+            })),
+          );
+        }
+
+        if (groupsResponse.status === 200) {
+          setGroups(
+            (groupsResponse.body.groups ?? []).map((g) => ({
+              id: g.id!,
+              name: g.name!,
+            })),
+          );
         }
       } finally {
         setLoading(false);
       }
     };
 
-    if (personId) {
-      fetchPerson();
-    }
+    if (personId) fetchData();
   }, [personId]);
-
-  useEffect(() => {
-    const fetchContactMethods = async () => {
-      const contactMethodsResponse =
-        await contactMethodsClient.getContactMethods();
-
-      if (contactMethodsResponse.status === 200) {
-        const contactMethods = contactMethodsResponse.body.contactMethods ?? [];
-        setContactMethods(
-          contactMethods.map((contactMethod) => ({
-            id: contactMethod.id ?? 0,
-            applicationName: contactMethod.applicationName ?? "",
-            applicationMetadata: contactMethod.applicationMetadata as Record<
-              string,
-              string
-            >,
-          })),
-        );
-      } else {
-        setErrors({
-          fetch: "Erreur lors du chargement des méthodes de contact",
-        });
-      }
-    };
-    fetchContactMethods();
-  }, []);
 
   const applicationNames = useMemo(() => {
     return (
-      contactMethods?.map((contactMethod) => contactMethod.applicationName) ??
-      []
+      contactMethods?.map((cm) => cm.applicationName) ?? []
     );
   }, [contactMethods]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.name?.trim()) {
-      newErrors.name = "Le nom est requis";
-    }
-
-    if (!formData.birthDate) {
-      newErrors.birthDate = "La date d'anniversaire est requise";
-    }
-
-    if (!formData.applicationName) {
-      newErrors.applicationName = "L'application est requise";
-    }
-
+    if (!formData.name?.trim()) newErrors.name = "Le nom est requis";
+    if (!formData.birthDate) newErrors.birthDate = "La date d'anniversaire est requise";
+    if (!formData.applicationName) newErrors.applicationName = "L'application est requise";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setSubmitting(true);
 
@@ -154,15 +139,14 @@ export default function EditPersonPage() {
         formData.applicationMetadata as Record<string, string>;
 
       const response = await peopleClient.updatePersonById({
-        params: {
-          id: personId,
-        },
+        params: { id: personId },
         body: {
           name: formData.name?.trim(),
           birthDate: new Date(formData.birthDate ?? ""),
           application: formData.applicationName,
           applicationMetadata:
-            Object.keys(metadata).length > 0 ? metadata : undefined,
+            metadata && Object.keys(metadata).length > 0 ? metadata : undefined,
+          groupId: formData.groupId ? Number(formData.groupId) : undefined,
         },
       });
 
@@ -178,9 +162,7 @@ export default function EditPersonPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleApplicationMetadataChange = (key: string, value: string) => {
@@ -188,91 +170,33 @@ export default function EditPersonPage() {
       ...prev,
       applicationMetadata: { ...prev.applicationMetadata, [key]: value },
     }));
-    if (errors.applicationMetadata) {
-      setErrors((prev) => ({ ...prev, applicationMetadata: "" }));
-    }
   };
-
-  if (!isAdmin) {
-    return (
-      <div>
-        Vous n&apos;avez pas les permissions nécessaires pour accéder à cette
-        page.
-      </div>
-    );
-  }
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/people">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Modifier un anniversaire
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Chargement des données...
-            </p>
-          </div>
+      <div className="max-w-2xl mx-auto space-y-6 py-8">
+        <div className="flex justify-center items-center py-8">
+          <p style={{ color: "var(--muted)" }}>Chargement...</p>
         </div>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
-  // Error state
   if (errors.fetch) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/people">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Modifier un anniversaire
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Erreur lors du chargement
-            </p>
-          </div>
+      <div className="max-w-2xl mx-auto space-y-6 py-8">
+        <p className="text-destructive text-center">{errors.fetch}</p>
+        <div className="text-center">
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Réessayer
+          </Button>
         </div>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <p className="text-destructive">{errors.fetch}</p>
-              <Button
-                variant="outline"
-                className="mt-4 bg-transparent"
-                onClick={() => window.location.reload()}
-              >
-                Réessayer
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/people">
           <Button variant="outline" size="sm">
@@ -281,150 +205,141 @@ export default function EditPersonPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Modifier un anniversaire
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
+            Modifier {personName}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Modifier les informations de {personName}
-          </p>
         </div>
       </div>
 
-      {/* Form */}
-      <Card>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Field */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Nom *</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Entrez le nom complet"
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                className={errors.name ? "border-destructive" : ""}
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
-              )}
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="name">Nom *</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Entrez le nom complet"
+            value={formData.name}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            className={errors.name ? "border-destructive" : ""}
+          />
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name}</p>
+          )}
+        </div>
 
-            {/* Birthdate Field */}
-            <div className="space-y-2">
-              <Label htmlFor="birthDate">Date d&apos;anniversaire *</Label>
-              <Input
-                id="birthDate"
-                type="date"
-                value={formData.birthDate}
-                onChange={(e) => handleInputChange("birthDate", e.target.value)}
-                className={errors.birthDate ? "border-destructive" : ""}
-              />
-              {errors.birthDate && (
-                <p className="text-sm text-destructive">{errors.birthDate}</p>
-              )}
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="birthDate">Date d&apos;anniversaire *</Label>
+          <Input
+            id="birthDate"
+            type="date"
+            value={formData.birthDate}
+            onChange={(e) => handleInputChange("birthDate", e.target.value)}
+            className={errors.birthDate ? "border-destructive" : ""}
+          />
+          {errors.birthDate && (
+            <p className="text-sm text-destructive">{errors.birthDate}</p>
+          )}
+        </div>
 
-            {/* Application Selection Field */}
-            <div className="space-y-2">
-              <Label htmlFor="application">Application *</Label>
-              <Select
-                value={formData.applicationName}
-                onValueChange={(value) =>
-                  handleInputChange("applicationName", value)
-                }
-              >
-                <SelectTrigger
-                  className={errors.applicationName ? "border-destructive" : ""}
-                >
-                  <SelectValue placeholder="Sélectionnez une application" />
-                </SelectTrigger>
-                <SelectContent>
-                  {applicationNames.map(
-                    (applicationName: string, index: number) => (
-                      <SelectItem
-                        key={applicationName + index}
-                        value={applicationName}
-                      >
-                        {applicationName}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-              {errors.application && (
-                <p className="text-sm text-destructive">{errors.application}</p>
-              )}
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="group">Groupe</Label>
+          <Select
+            value={formData.groupId}
+            onValueChange={(value) => handleInputChange("groupId", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionnez un groupe" />
+            </SelectTrigger>
+            <SelectContent>
+              {groups.map((group) => (
+                <SelectItem key={group.id} value={String(group.id)}>
+                  {group.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            {/* Application Metadata Fields */}
-            {formData.applicationName &&
-              contactMethods?.find(
-                (contactMethod) =>
-                  contactMethod.applicationName === formData.applicationName,
-              ) && (
-                <div className="space-y-4">
-                  <span className="font-semibold text-foreground">
-                    Configuration {formData.applicationName}
-                  </span>
+        <Separator />
 
-                  {Object.keys(
-                    contactMethods?.find(
-                      (contactMethod) =>
-                        contactMethod.applicationName ===
-                        formData.applicationName,
-                    )?.applicationMetadata ?? {},
-                  ).map((key) => (
-                    <div key={key} className="space-y-2">
-                      <Label htmlFor={key}>{key}</Label>
-                      <Input
-                        id={key}
-                        type="text"
-                        value={formData.applicationMetadata?.[key]}
-                        onChange={(e) =>
-                          handleApplicationMetadataChange(key, e.target.value)
-                        }
-                      />
-                    </div>
-                  ))}
+        <div className="space-y-2">
+          <Label htmlFor="application">Application *</Label>
+          <Select
+            value={formData.applicationName}
+            onValueChange={(value) =>
+              handleInputChange("applicationName", value)
+            }
+          >
+            <SelectTrigger
+              className={errors.applicationName ? "border-destructive" : ""}
+            >
+              <SelectValue placeholder="Sélectionnez une application" />
+            </SelectTrigger>
+            <SelectContent>
+              {applicationNames.map((name: string, index: number) => (
+                <SelectItem key={name + index} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.applicationName && (
+            <p className="text-sm text-destructive">
+              {errors.applicationName}
+            </p>
+          )}
+        </div>
+
+        {formData.applicationName &&
+          contactMethods?.find(
+            (cm) => cm.applicationName === formData.applicationName,
+          ) && (
+            <div className="space-y-4">
+              <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                Configuration {formData.applicationName}
+              </span>
+              {Object.keys(
+                contactMethods?.find(
+                  (cm) => cm.applicationName === formData.applicationName,
+                )?.applicationMetadata ?? {},
+              ).map((key) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={key}>{key}</Label>
+                  <Input
+                    id={key}
+                    type="text"
+                    value={formData.applicationMetadata?.[key]}
+                    onChange={(e) =>
+                      handleApplicationMetadataChange(key, e.target.value)
+                    }
+                  />
                 </div>
-              )}
-
-            {/* Submit Error */}
-            {errors.submit && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                <p className="text-sm text-destructive">{errors.submit}</p>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Link href="/people">
-                <Button variant="outline" type="button">
-                  Annuler
-                </Button>
-              </Link>
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="bg-primary hover:bg-primary/90"
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                    Mise à jour...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Mettre à jour
-                  </>
-                )}
-              </Button>
+              ))}
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          )}
+
+        {errors.submit && (
+          <div className="p-3 rounded-md" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+            <p className="text-sm text-destructive">{errors.submit}</p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Link href="/people">
+            <Button variant="outline" type="button">
+              Annuler
+            </Button>
+          </Link>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Mise à jour..." : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Mettre à jour
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

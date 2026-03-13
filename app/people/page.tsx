@@ -41,6 +41,7 @@ type Person = {
   birthDate: Date | null;
   application: string;
   applicationMetadata: Record<string, string | number | boolean>;
+  groupName?: string | null;
 };
 
 export default function DashboardPage() {
@@ -206,6 +207,7 @@ export default function DashboardPage() {
                     Date d&apos;anniversaire
                     {getSortIcon("birthDate")}
                   </TableHead>
+                  <TableHead>Groupe</TableHead>
                   <TableHead>Application</TableHead>
                   {isAdmin && (
                     <TableHead className="text-right">Actions</TableHead>
@@ -217,6 +219,11 @@ export default function DashboardPage() {
                   <TableRow key={person.id}>
                     <TableCell className="font-medium">{person.name}</TableCell>
                     <TableCell>{formatDate(person.birthDate)}</TableCell>
+                    <TableCell>
+                      <span className="text-sm" style={{ color: "var(--muted)" }}>
+                        {person.groupName ?? "—"}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <ApplicationBadge application={person.application} />
                     </TableCell>

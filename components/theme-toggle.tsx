@@ -2,12 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Moon, Sun } from "lucide-react";
+
+function applyTheme(theme: string) {
+  const html = document.documentElement;
+  html.setAttribute("data-theme", theme);
+  if (theme === "dark") {
+    html.classList.add("dark");
+  } else {
+    html.classList.remove("dark");
+  }
+}
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    // Check for saved theme in localStorage
     const savedTheme = localStorage.getItem("theme");
     const prefersDark =
       savedTheme === "dark" ||
@@ -15,16 +25,13 @@ export function ThemeToggle() {
         window.matchMedia("(prefers-color-scheme: dark)").matches);
 
     setIsDark(prefersDark);
-    document.documentElement.setAttribute(
-      "data-theme",
-      prefersDark ? "dark" : "light",
-    );
+    applyTheme(prefersDark ? "dark" : "light");
   }, []);
 
   const toggleTheme = () => {
     const newTheme = isDark ? "light" : "dark";
     setIsDark(!isDark);
-    document.documentElement.setAttribute("data-theme", newTheme);
+    applyTheme(newTheme);
     localStorage.setItem("theme", newTheme);
   };
 
@@ -36,30 +43,7 @@ export function ThemeToggle() {
       className="h-8 w-8 p-0"
       title={`Switch to ${isDark ? "light" : "dark"} theme`}
     >
-      {isDark ? (
-        // Sun icon for light mode
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="12" cy="12" r="5" />
-          <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-        </svg>
-      ) : (
-        // Moon icon for dark mode
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      )}
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </Button>
   );
 }

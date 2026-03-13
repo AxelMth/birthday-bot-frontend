@@ -12,142 +12,122 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
     isAdmin: false,
-    apiKey: null,
-    validating: false,
+    token: null,
+    username: null,
+    validating: true,
     error: null,
   });
 
-  // Parse API key from URL parameters
-  const parseApiKeyFromUrl = useCallback((): string | null => {
-    if (typeof window === "undefined") return null;
+  const validateToken = useCallback(async (token: string): Promise<boolean> => {
+    setState((prev) => ({ ...prev, validating: true, error: null }));
 
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("apiKey") || urlParams.get("API_KEY");
+    try {
+      const result = await AuthClientService.validateToken(token);
+
+      const storedUsername =
+        typeof window !== "undefined"
+          ? localStorage.getItem("username")
+          : null;
+
+      setState((prev) => ({
+        ...prev,
+        isAdmin: result.isAdmin,
+        token,
+        username: storedUsername,
+        validating: false,
+        error: null,
+      }));
+
+      return result.isAdmin;
+    } catch {
+      setState((prev) => ({
+        ...prev,
+        isAdmin: false,
+        token: null,
+        username: null,
+        validating: false,
+        error: "Session expired",
+      }));
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+      }
+      return false;
+    }
   }, []);
 
-  // Get stored API key from localStorage
-  const getStoredApiKey = useCallback((): string | null => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("apiKey");
-  }, []);
-
-  // Store API key in localStorage
-  const storeApiKey = useCallback((apiKey: string): void => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("apiKey", apiKey);
-  }, []);
-
-  // Clear API key from localStorage
-  const clearStoredApiKey = useCallback((): void => {
-    if (typeof window === "undefined") return;
-    localStorage.removeItem("apiKey");
-    localStorage.removeItem("isAdmin"); // Clear cached admin status too
-  }, []);
-
-  // Validate API key with backend
-  const validateApiKey = useCallback(
-    async (apiKey: string): Promise<boolean> => {
+  const login = useCallback(
+    async (username: string, password: string): Promise<boolean> => {
       setState((prev) => ({ ...prev, validating: true, error: null }));
 
       try {
-        const result = await AuthClientService.validateApiKey(apiKey);
+        const result = await AuthClientService.login(username, password);
 
-        setState((prev) => ({
-          ...prev,
-          isAdmin: result.isAdmin,
-          apiKey,
+        if (typeof window !== "undefined") {
+          localStorage.setItem("token", result.token);
+          localStorage.setItem("username", result.username);
+        }
+
+        setState({
+          isAdmin: true,
+          token: result.token,
+          username: result.username,
           validating: false,
           error: null,
-        }));
-
-        // Cache admin status for UX (will be re-validated on reload)
-        if (typeof window !== "undefined") {
-          localStorage.setItem("isAdmin", result.isAdmin.toString());
-        }
+        });
 
         return true;
       } catch (error) {
         setState((prev) => ({
           ...prev,
           isAdmin: false,
-          apiKey: null,
+          token: null,
+          username: null,
           validating: false,
           error:
-            error instanceof Error
-              ? error.message
-              : "Failed to validate API key",
+            error instanceof Error ? error.message : "Login failed",
         }));
-
-        // Clear stored key on validation failure
-        clearStoredApiKey();
         return false;
       }
     },
-    [clearStoredApiKey],
+    [],
   );
 
-  // Set API key and validate
-  const setApiKey = useCallback(
-    async (apiKey: string): Promise<void> => {
-      storeApiKey(apiKey);
-      await validateApiKey(apiKey);
-    },
-    [storeApiKey, validateApiKey],
-  );
-
-  // Clear API key and reset state
-  const clearApiKey = useCallback((): void => {
-    clearStoredApiKey();
+  const logout = useCallback((): void => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+    }
     setState({
       isAdmin: false,
-      apiKey: null,
+      token: null,
+      username: null,
       validating: false,
       error: null,
     });
-  }, [clearStoredApiKey]);
+  }, []);
 
-  // Initialize auth state on mount
   useEffect(() => {
     const initializeAuth = async () => {
-      // First, check for API key in URL
-      const urlApiKey = parseApiKeyFromUrl();
+      if (typeof window === "undefined") return;
 
-      if (urlApiKey) {
-        // Store and validate API key from URL
-        storeApiKey(urlApiKey);
-        await validateApiKey(urlApiKey);
+      const storedToken = localStorage.getItem("token");
 
-        // Clean up URL by removing the API key parameter
-        const url = new URL(window.location.href);
-        url.searchParams.delete("apiKey");
-        url.searchParams.delete("API_KEY");
-        window.history.replaceState({}, "", url.toString());
+      if (storedToken) {
+        await validateToken(storedToken);
       } else {
-        // Check for stored API key and validate
-        const storedApiKey = getStoredApiKey();
-
-        if (storedApiKey) {
-          // Load cached admin status for immediate UX
-          const cachedIsAdmin = localStorage.getItem("isAdmin") === "true";
-          setState((prev) => ({
-            ...prev,
-            apiKey: storedApiKey,
-            isAdmin: cachedIsAdmin,
-          }));
-
-          // Validate stored key in background
-          await validateApiKey(storedApiKey);
-        }
+        setState((prev) => ({ ...prev, validating: false }));
       }
     };
 
     initializeAuth();
-  }, [parseApiKeyFromUrl, getStoredApiKey, storeApiKey, validateApiKey]);
+  }, [validateToken]);
 
   const contextValue = {
     ...state,
-    setApiKey,
-    clearApiKey,
+    login,
+    logout,
   };
 
   return (

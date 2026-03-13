@@ -1,10 +1,9 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Lock } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,59 +14,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { peopleClient } from "@/lib/api-client";
+import { peopleClient, groupClient } from "@/lib/api-client";
 import Link from "next/link";
-import { useAuth } from "@/components/auth-context";
+
+type Group = { id: number; name: string };
 
 export default function CreatePersonPage() {
-  const { isAdmin } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     birthDate: "",
     application: "",
     channelId: "",
     userId: "",
+    groupId: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Show 403 message if not admin
-  if (!isAdmin) {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <Card className="max-w-md mx-auto">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-6 h-6 text-destructive" />
-            </div>
-            <CardTitle className="text-destructive">Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              You need admin privileges to create new people. Please provide a
-              valid API key.
-            </p>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Add{" "}
-                <code className="bg-muted px-1 rounded">?apiKey=YOUR_KEY</code>{" "}
-                to the URL to authenticate.
-              </p>
-              <Link href="/people">
-                <Button variant="outline" className="w-full">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to People
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response = await groupClient.getGroups();
+        if (response.status === 200) {
+          setGroups(
+            (response.body.groups ?? []).map((g) => ({
+              id: g.id!,
+              name: g.name!,
+            })),
+          );
+        }
+      } catch {
+        console.error("Failed to fetch groups");
+      }
+    };
+    fetchGroups();
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -100,9 +84,7 @@ export default function CreatePersonPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
@@ -123,6 +105,7 @@ export default function CreatePersonPage() {
             Object.keys(metadata).length > 0
               ? (metadata as Record<string, string | number | boolean>)
               : undefined,
+          groupId: formData.groupId ? Number(formData.groupId) : undefined,
         },
       });
       router.push("/people");
@@ -136,7 +119,6 @@ export default function CreatePersonPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -144,7 +126,6 @@ export default function CreatePersonPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/people">
           <Button variant="outline" size="sm">
@@ -153,169 +134,147 @@ export default function CreatePersonPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
             Créer une personne
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Ajouter une nouvelle personne pour les notifications
-            d&apos;anniversaire
+          <p style={{ color: "var(--muted)" }} className="mt-1 text-sm">
+            Ajouter une nouvelle personne pour les notifications d&apos;anniversaire
           </p>
         </div>
       </div>
 
-      {/* Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Informations de la personne</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Field */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="name">Nom *</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Entrez le nom complet"
+            value={formData.name}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            className={errors.name ? "border-destructive" : ""}
+          />
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="birthDate">Date d&apos;anniversaire *</Label>
+          <Input
+            id="birthDate"
+            type="date"
+            value={formData.birthDate}
+            onChange={(e) => handleInputChange("birthDate", e.target.value)}
+            className={errors.birthDate ? "border-destructive" : ""}
+          />
+          {errors.birthDate && (
+            <p className="text-sm text-destructive">{errors.birthDate}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="group">Groupe</Label>
+          <Select
+            value={formData.groupId}
+            onValueChange={(value) => handleInputChange("groupId", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionnez un groupe" />
+            </SelectTrigger>
+            <SelectContent>
+              {groups.map((group) => (
+                <SelectItem key={group.id} value={String(group.id)}>
+                  {group.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-2">
+          <Label htmlFor="application">Application *</Label>
+          <Select
+            value={formData.application}
+            onValueChange={(value) => handleInputChange("application", value)}
+          >
+            <SelectTrigger
+              className={errors.application ? "border-destructive" : ""}
+            >
+              <SelectValue placeholder="Sélectionnez une application" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="slack">Slack</SelectItem>
+              <SelectItem value="none">Aucune application</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.application && (
+            <p className="text-sm text-destructive">{errors.application}</p>
+          )}
+        </div>
+
+        {formData.application === "slack" && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+              Configuration Slack
+            </h3>
+
             <div className="space-y-2">
-              <Label htmlFor="name">Nom *</Label>
+              <Label htmlFor="channelId">ID du canal *</Label>
               <Input
-                id="name"
+                id="channelId"
                 type="text"
-                placeholder="Entrez le nom complet"
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                className={errors.name ? "border-destructive" : ""}
+                placeholder="Ex: C1234567890"
+                value={formData.channelId}
+                onChange={(e) => handleInputChange("channelId", e.target.value)}
+                className={errors.channelId ? "border-destructive" : ""}
               />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
+              {errors.channelId && (
+                <p className="text-sm text-destructive">{errors.channelId}</p>
               )}
             </div>
 
-            {/* Birthdate Field */}
             <div className="space-y-2">
-              <Label htmlFor="birthDate">Date d&apos;anniversaire *</Label>
+              <Label htmlFor="userId">ID de l&apos;utilisateur *</Label>
               <Input
-                id="birthDate"
-                type="date"
-                value={formData.birthDate}
-                onChange={(e) => handleInputChange("birthDate", e.target.value)}
-                className={errors.birthDate ? "border-destructive" : ""}
+                id="userId"
+                type="text"
+                placeholder="Ex: U1234567890"
+                value={formData.userId}
+                onChange={(e) => handleInputChange("userId", e.target.value)}
+                className={errors.userId ? "border-destructive" : ""}
               />
-              {errors.birthDate && (
-                <p className="text-sm text-destructive">{errors.birthDate}</p>
+              {errors.userId && (
+                <p className="text-sm text-destructive">{errors.userId}</p>
               )}
             </div>
+          </div>
+        )}
 
-            {/* Application Field */}
-            <div className="space-y-2">
-              <Label htmlFor="application">Application *</Label>
-              <Select
-                value={formData.application}
-                onValueChange={(value) =>
-                  handleInputChange("application", value)
-                }
-              >
-                <SelectTrigger
-                  className={errors.application ? "border-destructive" : ""}
-                >
-                  <SelectValue placeholder="Sélectionnez une application" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="slack">Slack</SelectItem>
-                  <SelectItem value="none">Aucune application</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.application && (
-                <p className="text-sm text-destructive">{errors.application}</p>
-              )}
-            </div>
+        {errors.submit && (
+          <div className="p-3 rounded-md" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+            <p className="text-sm text-destructive">{errors.submit}</p>
+          </div>
+        )}
 
-            {/* Slack Metadata Fields */}
-            {formData.application === "slack" && (
+        <div className="flex justify-end gap-3 pt-4">
+          <Link href="/people">
+            <Button variant="outline" type="button">
+              Annuler
+            </Button>
+          </Link>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Création..." : (
               <>
-                <Separator />
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Configuration Slack
-                  </h3>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="channelId">ID du canal *</Label>
-                    <Input
-                      id="channelId"
-                      type="text"
-                      placeholder="Ex: C1234567890"
-                      value={formData.channelId}
-                      onChange={(e) =>
-                        handleInputChange("channelId", e.target.value)
-                      }
-                      className={errors.channelId ? "border-destructive" : ""}
-                    />
-                    {errors.channelId && (
-                      <p className="text-sm text-destructive">
-                        {errors.channelId}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      L&apos;ID du canal Slack où envoyer les notifications
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="userId">ID de l&apos;utilisateur *</Label>
-                    <Input
-                      id="userId"
-                      type="text"
-                      placeholder="Ex: U1234567890"
-                      value={formData.userId}
-                      onChange={(e) =>
-                        handleInputChange("userId", e.target.value)
-                      }
-                      className={errors.userId ? "border-destructive" : ""}
-                    />
-                    {errors.userId && (
-                      <p className="text-sm text-destructive">
-                        {errors.userId}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      L&apos;ID de l&apos;utilisateur Slack à mentionner
-                    </p>
-                  </div>
-                </div>
+                <Save className="w-4 h-4 mr-2" />
+                Créer la personne
               </>
             )}
-
-            {/* Submit Error */}
-            {errors.submit && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                <p className="text-sm text-destructive">{errors.submit}</p>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Link href="/">
-                <Button variant="outline" type="button">
-                  Annuler
-                </Button>
-              </Link>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="bg-primary hover:bg-primary/90"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                    Création...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Créer la personne
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
